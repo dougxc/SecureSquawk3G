@@ -1,0 +1,43 @@
+/* Test Five - C */
+
+String testClass			= "Q.Y";
+
+// This test fails, so not sure of expected error
+String expectedError		= "Error";
+
+/* Allow X + Y to instanciate */
+String[] req 	  	= { "grantee=P.X,grantor=java.lang.Object," +
+								"type=subclass,key=cldc_subclass,passwd=123456",
+
+                        "grantee=Q.Y,grantor=java.lang.Object," +
+								"type=subclass,key=cldc_subclass,passwd=123456",
+								
+/* Allow Y to subclass java.lang.Exception */
+   		 				"grantee=P.TestException,grantor=java.lang.Exception," +
+								"type=subclass,key=cldc_subclass,passwd=123456",
+
+/* Allow Q.Y access to System.out */
+   		 				"grantee=Q.Y,grantor=java.lang.System," +
+								"type=cra,key=cldc_cra,passwd=123456"
+
+						};
+																
+String description			= "A package-private exception is thrown by P.X, " +
+                              "with Q.Y attempting to catch it.  In this scenario " +
+                              "it should fail, as P.X does not have TACC_EXCEPTION " +
+                              "set AND there is no explicit access to " + 
+                              "java.lang.Exception. (to call getMessage()).";
+
+
+//void postWobulate()
+//{
+    /* Create directory */
+//    new File(wobulatedDirFile, "Q").mkdir();
+
+    /* Copy non-wobulated file */
+//    cp(preverifiedDir + FS + "Q" + FS + "Y.class", 
+ //       wobulatedDir + FS + "Q" + FS + "Y.class");
+
+//}
+
+							

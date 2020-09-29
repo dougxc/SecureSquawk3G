@@ -1,0 +1,22 @@
+
+# Stand alone class 'P.X'
+class P.X {
+  access_flags="TACC_CLASS_RESOURCE_ACCESS"
+  subclass_key="x.subclass"
+  #class_resource_access_key="x.cra"
+  primary_domain_key="x.domain"
+  default_field_accessibility="false"
+  default_method_accessibility="false"
+  
+  subclass_permits="java.lang.Object" 
+}
+
+
+class P.Y {
+  primary_domain_key="y.domain"
+  default_field_accessibility="false"
+  default_method_accessibility="false"
+  
+  subclass_permits="java.lang.Object"
+}
+

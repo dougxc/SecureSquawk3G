@@ -1,0 +1,20 @@
+
+class P.TestException {
+  primary_domain_key="testexception.domain"
+  default_field_accessibility="false"
+  default_method_accessibility="false"
+  
+  subclass_permits="java.lang.Exception" 
+}
+
+
+class P.X {
+  primary_domain_key="testexception.domain"
+  default_field_accessibility="false"
+  default_method_accessibility="false"
+  subclass_permits="java.lang.Object" 
+  
+  class_resource_access_permits="java.lang.System"
+}
+
+

@@ -1,0 +1,199 @@
+#
+# WorkShop Project File
+#
+# This file is machine generated, do not modify
+#
+
+projectid "/tmp/Squawk3G/slowvm/ide/squawk.prd";
+projectver 6.0;
+
+project_t cset_5ybv8fG3VYJlCpLIOH2a = {
+
+    entities = {
+        {
+            name = "slowvm/src/rts/cc/jni_md.h";
+            type = HH;
+            path = "slowvm/src/rts/cc/jni_md.h";
+            output_dir = "slowvm/build";
+            buildable = false;
+        },
+        {
+            name = "slowvm/src/rts/cc/os.c";
+            type = C;
+            path = "slowvm/src/rts/cc/os.c";
+            builder = C_Builder;
+            output_dir = "slowvm/build";
+            options = {
+                C_Builder<incpath>.value="slowvm/src/rts/cc",
+                C_Builder<incpath>.value="slowvm/src/vm",
+                C_Builder<incpath>.value="/usr/openwin/include",
+                C_Builder<incpath>.value="/usr/dt/include";
+            };
+            buildable = false;
+        },
+        {
+            name = "slowvm/src/vm/bytecodes.c";
+            type = C;
+            path = "slowvm/src/vm/bytecodes.c";
+            builder = C_Builder;
+            output_dir = "slowvm/build";
+            options = {
+                C_Builder<incpath>.value="slowvm/src/rts/cc",
+                C_Builder<incpath>.value="slowvm/src/vm",
+                C_Builder<incpath>.value="/usr/openwin/include",
+                C_Builder<incpath>.value="/usr/dt/include";
+            };
+            buildable = false;
+        },
+        {
+            name = "slowvm/src/vm/image.c";
+            type = C;
+            path = "slowvm/src/vm/image.c";
+            builder = C_Builder;
+            output_dir = "slowvm/build";
+            options = {
+                C_Builder<incpath>.value="slowvm/src/rts/cc",
+                C_Builder<incpath>.value="slowvm/src/vm",
+                C_Builder<incpath>.value="/usr/openwin/include",
+                C_Builder<incpath>.value="/usr/dt/include";
+            };
+            buildable = false;
+        },
+        {
+            name = "slowvm/src/vm/io.c";
+            type = C;
+            path = "slowvm/src/vm/io.c";
+            builder = C_Builder;
+            output_dir = "slowvm/build";
+            options = {
+                C_Builder<incpath>.value="slowvm/src/rts/cc",
+                C_Builder<incpath>.value="slowvm/src/vm",
+                C_Builder<incpath>.value="/usr/openwin/include",
+                C_Builder<incpath>.value="/usr/dt/include";
+            };
+            buildable = false;
+        },
+        {
+            name = "slowvm/src/vm/platform.h";
+            type = HH;
+            path = "slowvm/src/vm/platform.h";
+            output_dir = "slowvm/build";
+            buildable = false;
+        },
+        {
+            name = "slowvm/src/vm/relocation.c";
+            type = C;
+            path = "slowvm/src/vm/relocation.c";
+            builder = C_Builder;
+            output_dir = "slowvm/build";
+            options = {
+                C_Builder<incpath>.value="slowvm/src/rts/cc",
+                C_Builder<incpath>.value="slowvm/src/vm",
+                C_Builder<incpath>.value="/usr/openwin/include",
+                C_Builder<incpath>.value="/usr/dt/include";
+            };
+            buildable = false;
+        },
+        {
+            name = "slowvm/src/vm/rom.h";
+            type = HH;
+            path = "slowvm/src/vm/rom.h";
+            output_dir = "slowvm/build";
+            buildable = false;
+        },
+        {
+            name = "slowvm/src/vm/squawk.c";
+            type = C;
+            path = "slowvm/src/vm/squawk.c";
+            builder = C_Builder;
+            output_dir = "slowvm/build";
+            options = {
+                C_Builder<incpath>.value="slowvm/src/rts/cc",
+                C_Builder<incpath>.value="slowvm/src/vm",
+                C_Builder<incpath>.value="/usr/openwin/include",
+                C_Builder<incpath>.value="/usr/dt/include";
+            };
+            buildable = false;
+        },
+        {
+            name = "slowvm/src/vm/switch.c";
+            type = C;
+            path = "slowvm/src/vm/switch.c";
+            builder = C_Builder;
+            output_dir = "slowvm/build";
+            options = {
+                C_Builder<incpath>.value="slowvm/src/rts/cc",
+                C_Builder<incpath>.value="slowvm/src/vm",
+                C_Builder<incpath>.value="/usr/openwin/include",
+                C_Builder<incpath>.value="/usr/dt/include";
+            };
+            buildable = false;
+        },
+        {
+            name = "slowvm/src/vm/trace.c";
+            type = C;
+            path = "slowvm/src/vm/trace.c";
+            builder = C_Builder;
+            output_dir = "slowvm/build";
+            options = {
+                C_Builder<incpath>.value="slowvm/src/rts/cc",
+                C_Builder<incpath>.value="slowvm/src/vm",
+                C_Builder<incpath>.value="/usr/openwin/include",
+                C_Builder<incpath>.value="/usr/dt/include";
+            };
+            buildable = false;
+        },
+        {
+            name = "slowvm/src/vm/util.h";
+            type = HH;
+            path = "slowvm/src/vm/util.h";
+            output_dir = "slowvm/build";
+            buildable = false;
+        },
+        {
+            name = "squawk";
+            type = EXE;
+            path = "squawk";
+            dependencies = {
+                "slowvm/src/rts/cc/jni_md.h",
+                "slowvm/src/rts/cc/os.c",
+                "slowvm/src/vm/bytecodes.c",
+                "slowvm/src/vm/image.c",
+                "slowvm/src/vm/io.c",
+                "slowvm/src/vm/platform.h",
+                "slowvm/src/vm/relocation.c",
+                "slowvm/src/vm/rom.h",
+                "slowvm/src/vm/squawk.c",
+                "slowvm/src/vm/switch.c",
+                "slowvm/src/vm/trace.c",
+                "slowvm/src/vm/util.h";
+            };
+            builder = C_Builder;
+            output_dir = "slowvm/build";
+        };
+    };
+
+    globals = {
+        {
+            id = "C_Builder";
+            builder = C_Builder;
+            options = {
+                C_Builder<debug>,
+                C_Builder<sbrowser>;
+            };
+        };
+    };
+
+    gendata = {
+        {
+            tag = projecttype;
+            type = string_t;
+            value ="simple";
+        },
+        {
+            tag = projectdir;
+            type = string_t;
+            value ="/tmp/Squawk3G";
+        };
+    };
+};

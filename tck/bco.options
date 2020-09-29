@@ -1,0 +1,1 @@
+-cp j2me/classes:tck/tck.jar -inline:20 -nowarn -lib

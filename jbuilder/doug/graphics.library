@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<library>
+  <!--JBuilder Library Definition File-->
+  <fullname>graphics</fullname>
+  <class>
+    <path>../../graphics/j2meclasses</path>
+  </class>
+  <source>
+    <path>../../graphics/src</path>
+  </source>
+  <lastmodsaved>1090454499062</lastmodsaved>
+</library>

@@ -1,0 +1,62 @@
+w/o graphics
+------------
+
+bld -o2 -prod rom -prune:l j2me translator
+
+squawk -verbose -cp:graphics/j2meclasses;samples/j2meclasses example.shell.Main share
+
+squawk -verbose -cp:graphics/j2meclasses;samples/j2meclasses java.lang.SuiteCreator cubes example.cubes.  awtcore.impl.squawk.
+
+squawk -verbose -suite:cubes example.cubes.Main
+
+
+
+w/graphics
+----------
+
+bld -o2 -prod -mac rom j2me translator graphics
+
+squawk -verbose -cp:samples/j2meclasses example.shell.Main share
+
+squawk -verbose -cp:samples/j2meclasses java.lang.SuiteCreator cubes example.cubes.
+
+squawk -verbose -suite:cubes example.cubes.Main
+
+
+
+
+
+Split I/O server
+----------------
+
+java -cp squawk.jar com.sun.squawk.vm.ChannelIO
+
+squawk -verbose -Xioport:9090 -cp:samples/j2meclasses example.shell.Main share
+
+
+
+
+Interpreter Test
+----------------
+
+java -cp prototypecompiler\classes;j2me\classes;vmgen\classes com.sun.squawk.vm.Interpreter
+
+java -cp prototypecompiler/classes:j2me/classes:vmgen/classes com.sun.squawk.vm.Interpreter
+java -cp prototypecompiler/classes\;j2me/classes\;vmgen/classes com.sun.squawk.vm.Interpreter
+
+
+
+
+Solaris
+-------
+
+bash --login
+cvs -d :pserver:guest@morph:/usr/local/export/CVS login
+cvs -d :pserver:guest@morph:/usr/local/export/CVS checkout Squawk3G
+cvs -d :pserver:guest@morph:/usr/local/export/CVS update Squawk3G
+java -jar build.jar jvmenv
+
+
+To redirect stderr
+------------------
+squawk -verbose -Xtgc:15  example.shell.Main sh >xx.x 2>&1

@@ -1,0 +1,54 @@
+Thread
+------
+
+GLOBAL.INT.0=int                                java.lang.Thread.nextThreadNumber
+GLOBAL.INT.1=int                                java.lang.Thread.aliveThreads
+GLOBAL.REF.0=java.lang.Thread                   java.lang.Thread.currentThread
+GLOBAL.REF.1=java.lang.TimerQueue               java.lang.Thread.timerQueue
+GLOBAL.REF.2=java.lang.ThreadQueue              java.lang.Thread.runnableThreads
+GLOBAL.REF.3=com.sun.squawk.util.IntHashtable   java.lang.Thread.events
+GLOBAL.REF.4=java.lang.Object                   java.lang.Thread.threadDeathSignal
+
+GC
+--
+
+GLOBAL.INT.2=boolean                            java.lang.GC.excessiveGC
+GLOBAL.INT.3=int                                java.lang.GC.traceLevel
+GLOBAL.INT.4=int                                java.lang.GC.traceThreshold
+GLOBAL.INT.5=java.lang.Address                  java.lang.GC.nvmStartAddress
+GLOBAL.INT.6=java.lang.Address                  java.lang.GC.nvmEndAddress
+GLOBAL.INT.7=java.lang.Address                  java.lang.GC.nvmAllocationPointer
+GLOBAL.INT.8=java.lang.Address                  java.lang.GC.ramStart
+GLOBAL.INT.9=java.lang.Address                  java.lang.GC.ramEnd
+GLOBAL.INT.10=java.lang.Address                 java.lang.GC.ramAllocationPointer
+GLOBAL.INT.11=java.lang.Address                 java.lang.GC.ramAllocationEndPointer
+GLOBAL.INT.12=boolean                           java.lang.GC.allocationEnabled
+GLOBAL.REF.8=java.lang.GarbageCollector         java.lang.GC.collector
+
+VM
+--
+
+GLOBAL.INT.13=boolean                           java.lang.VM.verbose
+GLOBAL.INT.14=int                               java.lang.VM.tckMode
+GLOBAL.INT.15=boolean                           java.lang.VM.allowUserGC
+GLOBAL.INT.16=int                               java.lang.VM.nextHashcode
+GLOBAL.INT.17=boolean                           java.lang.VM.synchronizationEnabled
+GLOBAL.INT.18=boolean                           java.lang.VM.exceptionsEnabled
+GLOBAL.REF.12=java.lang.String                  java.lang.VM.resourcePath
+GLOBAL.REF.13=java.lang.Isolate                 java.lang.VM.currentIsolate
+GLOBAL.REF.14=java.lang.Object                  java.lang.VM.exitVMCatchMethod
+
+Tracer
+------
+
+GLOBAL.REF.5=java.util.Hashtable                com.sun.squawk.util.Tracer._features
+GLOBAL.REF.6=java.io.PrintStream                com.sun.squawk.util.Tracer._out
+GLOBAL.REF.7=java.lang.String                   com.sun.squawk.util.Tracer.filter
+
+SuiteManager
+------------
+
+GLOBAL.REF.9=java.lang.Suite                    java.lang.SuiteManager.RESERVED
+GLOBAL.REF.10=[java.lang.Suite                  java.lang.SuiteManager.suites
+
+

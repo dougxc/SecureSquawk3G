@@ -1,0 +1,47 @@
+0
+do_arithmeticException()
+do_arrayIndexOutOfBoundsException()
+do_collectGarbage()
+do_nullPonterException()
+do_reschedule()
+
+1
+do_callRun(java.lang.Thread)
+do_class_clinit(java.lang.Klass)
+do_extend(int)
+do_monitorenter(java.lang.Object)
+do_monitorexit(java.lang.Object)
+do_new(java.lang.Klass)
+do_throw(java.lang.Throwable)
+
+11
+do_getStaticInt(java.lang.Klass, int)
+do_getStaticLong(java.lang.Klass, int)
+do_getStaticOop(java.lang.Klass, int)
+do_oopStore(java.lang.Object, int)
+do_checkcast(java.lang.Object, java.lang.Klass)
+do_instanceof(java.lang.Object, java.lang.Klass)
+do_newarray(java.lang.Klass, int)
+do_newdimension(java.lang.Object[], int)
+do_fcmpg(float, float)
+do_fcmpl(float, float)
+do_lookup_b(int, byte[])
+do_lookup_i(int, int[])
+do_lookup_s(int, short[])
+
+22
+do_lcmp(long, long)
+do_dcmpg(double, double)
+do_dcmpl(double, double)
+
+111
+do_putStaticInt(int, java.lang.Klass, int)
+do_putStaticOop(java.lang.Object, java.lang.Klass, int)
+do_arrayOopStore(java.lang.Object, int, java.lang.Object)
+do_findSlot(java.lang.Object, java.lang.Klass, int)
+
+211
+do_putStaticLong(long, java.lang.Klass, int)
+
+11111
+do_startup(java.lang.Object, java.lang.Object, java.lang.Suite[], int, java.lang.Object)

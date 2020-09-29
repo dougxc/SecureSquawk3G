@@ -1,0 +1,121 @@
+1.
+//test 1d
+package P;
+
+//certificates: cldc subclass
+//keys: subclass, cra, domain
+//flags: SFx false
+
+//TRUSTED CLASS
+public class X {
+  protected int A = 3;
+}
+
+
+//test 1d
+package Q;
+
+//certificates: P.X subclass
+//keys: not relevant
+//flags: not relevant
+
+//TRUSTED CLASS
+public class Y extends P.X {
+  protected void bernie() {
+    int B = A;
+  }
+ 
+
+  public static void main (String[] args) {
+    (new Y()).bernie(); 
+  }
+}
+
+Output:
+Verifying subclass privileges for: java/lang/Class
+Verifying subclass privileges for: java/lang/String
+Verifying subclass privileges for: java/lang/System
+Verifying subclass privileges for: java/lang/Runnable
+Verifying subclass privileges for: java/lang/Thread
+Verifying subclass privileges for: java/lang/Throwable
+Verifying subclass privileges for: java/lang/Error
+Verifying subclass privileges for: java/lang/VirtualMachineError
+Verifying subclass privileges for: java/lang/OutOfMemoryError
+Verifying subclass privileges for: java/lang/StackOverflowError
+Verifying subclass privileges for: P/X
+Verifying permit: P/X -> java/lang/Object
+Verifying subclass privileges for: Q/Y
+Verifying permit: Q/Y -> P/X
+Verifying subclass privileges for: java/lang/Exception
+Verifying subclass privileges for: java/io/IOException
+Verifying subclass privileges for: java/lang/RuntimeException
+Verifying subclass privileges for: java/lang/NullPointerException
+Verifying subclass privileges for: java/lang/IllegalArgumentException
+Verifying subclass privileges for: java/lang/IndexOutOfBoundsException
+Verifying subclass privileges for: java/lang/StringIndexOutOfBoundsException
+Verifying subclass privileges for: javax/microedition/io/Connector
+Verifying class resource access: java/lang/System -> javax/microedition/io/ConnectorVerifying subclass privileges for: java/lang/ClassNotFoundException
+Verifying subclass privileges for: javax/microedition/io/ConnectionNotFoundExceptionVerifying subclass privileges for: java/lang/InstantiationException
+Verifying subclass privileges for: java/lang/IllegalAccessException
+Verifying subclass privileges for: java/lang/ClassCastException
+Verifying subclass privileges for: javax/microedition/io/Connection
+Verifying subclass privileges for: javax/microedition/io/InputConnection
+Verifying subclass privileges for: javax/microedition/io/OutputConnection
+Verifying subclass privileges for: java/io/InputStream
+Verifying subclass privileges for: java/io/DataInput
+Verifying subclass privileges for: java/io/DataInputStream
+Verifying subclass privileges for: java/io/OutputStream
+Verifying subclass privileges for: javax/microedition/cbs/CBSError
+Verifying subclass privileges for: javax/microedition/cbs/IllegalDomainError
+Uncaught exception javax/microedition/cbs/IllegalDomainError: While loading java/io/DataOutputStream: While loading java/io/DataOutput: Signature verification failed.
+
+2.
+//test 1e
+package P;
+
+//certificates: cldc subclass
+//keys: not relevant
+//flags: SFx false
+
+//TRUSTED CLASS
+public class X {
+  protected static int A = 3;
+}
+
+//test 1e
+package P;
+
+//certificates: cldc subclass
+//keys: not relevant
+//flags: not relevant
+
+//TRUSTED CLASS
+public class Y {
+  public static void main (String[] args) {
+    // X xobject = new X();
+    int B = X.A;
+  }
+}
+
+Output:
+Verifying subclass privileges for: java/lang/Class
+Verifying subclass privileges for: java/lang/String
+Verifying subclass privileges for: java/lang/System
+Verifying subclass privileges for: java/lang/Runnable
+Verifying subclass privileges for: java/lang/Thread
+Verifying subclass privileges for: java/lang/Throwable
+Verifying subclass privileges for: java/lang/Error
+Verifying subclass privileges for: java/lang/VirtualMachineError
+Verifying subclass privileges for: java/lang/OutOfMemoryError
+Verifying subclass privileges for: java/lang/StackOverflowError
+Verifying subclass privileges for: P/Y
+Verifying permit: P/Y -> java/lang/Object
+Verifying subclass privileges for: java/lang/Exception
+Verifying subclass privileges for: java/io/IOException
+Verifying subclass privileges for: java/lang/RuntimeException
+Verifying subclass privileges for: java/lang/NullPointerException
+Verifying subclass privileges for: java/lang/IllegalArgumentException
+Verifying subclass privileges for: javax/microedition/cbs/CBSError
+Verifying subclass privileges for: javax/microedition/cbs/IllegalDomainError
+Uncaught exception javax/microedition/cbs/IllegalDomainError: While loading java/lang/StringIndexOutOfBoundsException: Signature verification failed.
+

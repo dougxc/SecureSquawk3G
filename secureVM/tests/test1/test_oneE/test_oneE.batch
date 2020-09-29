@@ -1,0 +1,22 @@
+
+
+class P.X {
+  subclass_key="x.subclass"
+  class_resource_access_key="x.cra"
+  primary_domain_key="x.domain"
+  default_field_accessibility="false"
+  default_method_accessibility="false"
+  
+  subclass_permits="java.lang.Object" 
+}
+
+
+class P.Y {
+  subclass_key="y.subclass"
+  class_resource_access_key="y.cra"
+  primary_domain_key="y.domain"
+  default_field_accessibility="false"
+  default_method_accessibility="false"
+  
+  subclass_permits="java.lang.Object" 
+}

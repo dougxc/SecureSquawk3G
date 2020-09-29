@@ -1,0 +1,33 @@
+4. FFx tests
+
+   a. [FFx no, untrusted static field access -> fail]
+      accessed class, package: X, P-trusted
+        certificate: FFx no      
+      accessed field: A
+      accessing class, package: Y, P-untrusted
+        certificate: none
+      access type: Y access static field X.A 
+
+   b. [FFx yes, untrusted static field access -> succeed]
+      accessed class, package: X, P-trusted
+        certificate: FFx yes
+      accessed field: A      
+      accessing class, package: Y, Q-untrusted
+        certificate: none
+
+   c. [FFx byField, untrusted static field access -> succeed]
+      accessed class, package: X, P
+        certificate: FFx byField (A)
+      accessed field: A
+      accessing class, package: Y, Q
+        certificate: none
+      access type: Y access static field X.A 
+  
+   d. [FFx byField, untrusted static field access -> fail]
+      accessed class, package: X, P
+        certificate: FFx byField (A)
+      accessed field: B
+      accessing class, package: Y, Q
+        certificate: none
+      access type: Y access static field X.B 
+

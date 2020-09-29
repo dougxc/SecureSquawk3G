@@ -1,0 +1,13 @@
+
+# Stand alone class 'P.X'
+class P.X {
+  access_flags="TACC_SUBCLASS"
+  #subclass_key="test_oneb.subclass"
+  class_resource_access_key="test_oneb.cra"
+  primary_domain_key="test_oneb.domain"
+  default_field_accessibility="false"
+  default_method_accessibility="false"
+
+  subclass_permits="java.lang.Object"
+}
+

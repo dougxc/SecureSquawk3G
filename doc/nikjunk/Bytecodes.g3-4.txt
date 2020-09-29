@@ -1,0 +1,254 @@
+Exceptions
+
+        EX      Some general exception
+        NPE     NullPointerException
+        ABE     ArrayOutOfBoundsException
+        AME     ArithmeticException
+        ASE     ArrayStoreException
+
+
+80
+        CONST_0 - 15
+        OBJECT_0 - 15
+        LOAD_0 - 15
+        STORE_0 - 15
+        EXTEND_0 - 15
+6
+        WIDE_M1
+        WIDE_0
+        WIDE_1
+        WIDE_2
+        WIDE_SHORT
+        WIDE_INT
+8
+        CONST_M1
+        CONST_BYTE                              B
+        CONST_SHORT                             S
+        CONST_CHAR                              C
+        CONST_INT                               I
+        CONST_LONG                              L
+        CONST_FLOAT                             F
+        CONST_DOUBLE                            D
+2
+        OBJECT                                  A
+        EXTEND                                  A
+6
+        LOAD                                    A
+        LOAD_I2                                 A
+        STORE                                   A
+        STORE_I2                                A
+        INC                                     A
+        DEC                                     A
+34
+        [CLASS_]GETSTATIC                       A       EX
+        [CLASS_]GETSTATIC_O                     A       EX
+        [CLASS_]GETSTATIC_L                     A       EX
+        [CLASS_]PUTSTATIC                       A       EX
+        [CLASS_]PUTSTATIC_O                     A       EX
+        [CLASS_]PUTSTATIC_L                     A       EX
+        [THIS_]GETFIELD                         A       [NPE]
+        [THIS_]GETFIELD_B                       A       [NPE]
+        [THIS_]GETFIELD_S                       A       [NPE]
+        [THIS_]GETFIELD_C                       A       [NPE]
+        [THIS_]GETFIELD_O                       A       [NPE]
+        [THIS_]GETFIELD_L                       A       [NPE]
+        [THIS_]PUTFIELD                         A       [NPE]
+        [THIS_]PUTFIELD_B                       A       [NPE]
+        [THIS_]PUTFIELD_S                       A       [NPE]
+        [THIS_]PUTFIELD_O                       A       [NPE]
+        [THIS_]PUTFIELD_L                       A       [NPE]
+
+6
+        INVOKEINIT                              A
+        INVOKEINTERFACE                         A       NPE
+        INVOKESTATIC                            A
+        INVOKESUPER                             A
+        INVOKEVIRTUAL                           A       NPE
+        INVOKENATIVE                            A
+25
+        IF_IEQ                                  B
+        IF_INE                                  B
+        IF_ILT                                  B
+        IF_ILE                                  B
+        IF_IGT                                  B
+        IF_IGE                                  B
+        IF_ICMPEQ                               B
+        IF_ICMPNE                               B
+        IF_ICMPLT                               B
+        IF_ICMPLE                               B
+        IF_ICMPGT                               B
+        IF_ICMPGE                               B
+
+        IF_LEQ                                  B
+        IF_LNE                                  B
+        IF_LLT                                  B
+        IF_LLE                                  B
+        IF_LGT                                  B
+        IF_LGE                                  B
+        IF_LCMPEQ                               B
+        IF_LCMPNE                               B
+        IF_LCMPLT                               B
+        IF_LCMPLE                               B
+        IF_LCMPGT                               B
+        IF_LCMPGE                               B
+        GOTO                                    B
+3
+        RETURN
+        RETURN1
+        RETURN2
+34
+        ESCAPE
+        I2B
+        I2S
+        I2C
+        L2I
+        I2L
+        IADD
+        ISUB
+        IMUL
+        IDIV                                            AME
+        IREM                                            AME
+        INEG
+        LADD
+        LSUB
+        LMUL
+        LDIV                                            AME
+        LREM                                            AME
+        LNEG
+        IAND
+        IOR
+        IXOR
+        ISHL
+        ISHR
+        IUSHR
+        LAND
+        LOR
+        LXOR
+        LSHL
+        LSHR
+        LUSHR
+        THROW                                           EX
+        BPT
+        NOP
+        POP
+11
+        ALOAD                                           NPE ABE
+        ALOAD_B                                         NPE ABE
+        ALOAD_S                                         NPE ABE
+        ALOAD_C                                         NPE ABE
+        ALOAD_O                                         NPE ABE
+        ALOAD_L                                         NPE ABE
+        ASTORE                                          NPE ABE
+        ASTORE_B                                        NPE ABE
+        ASTORE_S                                        NPE ABE
+        ASTORE_O                                        NPE ABE ASE
+        ASTORE_L                                        NPE ABE
+6
+        LOOKUP
+        LOOKUP_B
+        LOOKUP_S
+        LOOKUP_C
+        TABLESWITCH                             TABLE
+        STABLESWITCH                            TABLE
+11
+        MONITORENTER                                    EX
+        MONITOREXIT                                     EX
+        ARRAYLENGTH                                     NPE
+        NEW                                             EX
+        CLASS_CLINIT                                    EX
+        NEWOBJECT
+        NEWARRAY                                        EX
+        NEWDIMENSION                                    EX
+        INSTANCEOF                                      EX
+        CHECKCAST                                       EX
+        METHODID?
+
+
+
+Escaped bytecodes
+
+64
+        IF_FEQ                                  B
+        IF_FNE                                  B
+        IF_FLT                                  B
+        IF_FLE                                  B
+        IF_FGT                                  B
+        IF_FGE                                  B
+        IF_FCMPEQ                               B
+        IF_FCMPNE                               B
+        IF_FCMPLT                               B
+        IF_FCMPLE                               B
+        IF_FCMPGT                               B
+        IF_FCMPGE                               B
+        IF_DEQ                                  B
+        IF_DNE                                  B
+        IF_DLT                                  B
+        IF_DLE                                  B
+        IF_DGT                                  B
+        IF_DGE                                  B
+        IF_DCMPEQ                               B
+        IF_DCMPNE                               B
+        IF_DCMPLT                               B
+        IF_DCMPLE                               B
+        IF_DCMPGT                               B
+        IF_DCMPGE                               B
+        [CLASS_]GETSTATIC_F                     A       EX
+        [CLASS_]GETSTATIC_D                     A       EX
+        [CLASS_]PUTSTATIC_F                     A       EX
+        [CLASS_]PUTSTATIC_D                     A       EX
+        [THIS_]GETFIELD_F                       A       [NPE]
+        [THIS_]GETFIELD_D                       A       [NPE]
+        [THIS_]PUTFIELD_F                       A       [NPE]
+        [THIS_]PUTFIELD_D                       A       [NPE]
+        FADD
+        FSUB
+        FMUL
+        FDIV
+        FREM
+        FNEG
+        DADD
+        DSUB
+        DMUL
+        DDIV
+        DREM
+        DNEG
+        I2F
+        L2F
+        F2I
+        F2L
+        I2D
+        L2D
+        F2D
+        D2I
+        D2L
+        D2F
+        ALOAD_F                                         NPE ABE
+        ALOAD_D                                         NPE ABE
+        ASTORE_F                                        NPE ABE
+        ASTORE_D                                        NPE ABE
+6
+        EWIDE_M1
+        EWIDE_0
+        EWIDE_1
+        EWIDE_2
+        EWIDE_SHORT
+        EWIDE_INT
+
+
+
+
+
+
+
+Suite
+  Klass[]          classes;
+  KlassMetadata[]  metas;
+
+Klass
+   String name;
+   etc...
+
+KlassMetadata
+   StringOfSymbols symbols;
+   byte[] ipTable;
+   byte[] localTypes;

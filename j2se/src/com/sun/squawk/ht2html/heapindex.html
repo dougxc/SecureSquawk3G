@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <script type="text/javascript">
+        var lastId = null;
+        function select(id) {
+            var label = document.getElementById(id);
+            if (lastId != null) {
+                var lastLabel = document.getElementById(lastId);
+                lastLabel.style.backgroundColor = "white";
+            }
+            label.style.backgroundColor = "#FFD700";
+            lastId = id;
+        }
+    </script>
+  </head>
+  <body>
+    <b>Heap trace index</b>
+    <br />
+    <br />
+    <table border="0" width="100%"><tr><td nowrap>
+      ${heaps.index}
+    </td></tr></table>
+    <script type="text/javascript">
+        select('h1');
+    </script>
+  </body>
+</html>

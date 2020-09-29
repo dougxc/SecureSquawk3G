@@ -1,0 +1,37 @@
+class P.TestException {
+  primary_domain_key="p.domain"
+  default_field_accessibility="false"
+  default_method_accessibility="false"
+  
+  subclass_permits="java.lang.Exception" 
+}
+
+class P.X {
+  access_flags="TACC_EXCEPTION"
+  
+  # Allow untrusted class to call "Throw"
+  non_default_methods="Throw ()V"
+  
+  primary_domain_key="p.domain"
+  default_field_accessibility="false"
+  default_method_accessibility="false"
+  
+  subclass_permits="java.lang.Object"
+}
+
+
+class Q.Y {
+  primary_domain_key="q.domain"
+  default_field_accessibility="false"
+  default_method_accessibility="false"
+  
+  # Allow Y to instanciate
+  subclass_permits="java.lang.Object"
+  
+  # Allow Y to print output
+  class_resource_access_permits="java.lang.System",
+  # Allow Y to access exception base class
+  								"java.lang.Exception"
+}
+
+

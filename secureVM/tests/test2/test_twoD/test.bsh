@@ -1,0 +1,17 @@
+/* Test Two - D */
+
+String testClass			= "Q.Y";
+String expectedError		= "";
+
+String[] req 	  	        = {"grantee=P.X,grantor=java.lang.Object," +
+							    "type=subclass,key=cldc_subclass,passwd=123456",
+								
+                               "grantee=Q.Y,grantor=java.lang.Object," +
+								"type=subclass,key=cldc_subclass,passwd=123456"
+                             };
+
+String description			= "Class P.X and Q.Y hold permits to subclass java.lang.object. "+
+								"Each are in the same primary domains, but in different " +
+								"java packages. Since they are in the same domain, if Q.Y " +
+								"attempts to access P.X (instanciate) " +
+								"the operation should succeed.";     

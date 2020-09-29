@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<library>
+  <!--JBuilder Library Definition File-->
+  <fullname>translator</fullname>
+  <class>
+    <path>../../translator/j2meclasses</path>
+  </class>
+  <source>
+    <path>../../translator/src</path>
+  </source>
+  <lastmodsaved>1090346236281</lastmodsaved>
+</library>

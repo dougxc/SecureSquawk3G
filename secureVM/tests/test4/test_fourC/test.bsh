@@ -1,0 +1,18 @@
+/* Test Four - C */
+
+String testClass			= "Q.Y";
+String expectedError		= "";
+
+String[] req 	  	        = {"grantee=P.X,grantor=java.lang.Object," +
+							    "type=subclass,key=cldc_subclass,passwd=123456",
+								
+                               "grantee=Q.Y,grantor=java.lang.Object," +
+								"type=subclass,key=cldc_subclass,passwd=123456"
+                             };
+
+String description			= "Class P.X and Q.Y hold permits to subclass java.lang.object. "+
+								"Each are in different primary domains and in separate java " +
+								"packages.  P.X has default field accessibility off, however " +
+								"the field A has been explicitly set to allow untrusted " +
+								"classed to use it. If Q.Y tries to access the field A " +
+								"in P.X, the operation should succeed.";

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Project Group-->
+<projectgroup>
+  <project path="bco.jpx"/>
+  <project path="builder.jpx"/>
+  <project path="compiler.jpx"/>
+  <project path="define.jpx"/>
+  <project path="graphics.jpx"/>
+  <project path="j2me.jpx"/>
+  <project path="j2se.jpx"/>
+  <project path="javawand.jpx"/>
+  <project path="mapper.jpx"/>
+  <project path="minimi.jpx"/>
+  <project path="prototypecompiler.jpx"/>
+  <project path="romizer.jpx"/>
+  <project path="samples.jpx"/>
+  <project path="tck.jpx"/>
+  <project path="translator.jpx"/>
+  <project path="vmgen.jpx"/>
+  <project path="../../secureVM/SVMTools/SVMTools.jpx"/>
+  <project path="../../secureVM/BCEL/BCEL.jpx"/>
+</projectgroup>

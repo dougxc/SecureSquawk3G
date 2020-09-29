@@ -1,0 +1,355 @@
+/**
+ * This is a beanscript shell script to enumerate and run
+ * the SKVM test suite. 
+ *
+ * Run this script by typing "java bsh.Interpreter runTests.bsh" 
+ * on the command line in the tests directory.
+ *
+ * Requirements:
+ *	- preverify executable must exist on the PATH or be specified
+ *    in the properties file.
+ *  - CLDC_API must be already wobulated
+ *  - Beanshell interpreter must be on the classpath
+ * 
+ * @author Andrew Crouch
+ * @see http://www.beanshell.org
+ */
+
+import java.util.Properties;
+
+
+    /*---------------------------------------------------------------------------*\
+     *                           Load Properties File	                         *
+    \*---------------------------------------------------------------------------*/	
+
+private static final String propertiesFile = "tests.properties";
+
+/* Load properties file. */
+Properties p = new Properties();
+
+try
+{
+	FileInputStream fis = new FileInputStream(propertiesFile);
+	p.load(fis);
+}
+catch (IOException e)
+{
+	error("Failed to open properties file!");
+	exit();
+}
+
+/* Setup commonly used variables */
+int    		DEBUG_LEVEL 	= Integer.parseInt(p.getProperty("DEBUG_LEVEL")).intValue();
+boolean 	CLEAN_UP		= Boolean.valueOf(p.getProperty("CLEAN_UP")).booleanValue();
+
+/* System properties */
+String FS	 				= System.getProperty("file.separator");
+String PS					= System.getProperty("path.separator");
+
+/* Test Properties */
+String TEST_FILE_NAME		= p.getProperty("TEST_FILE_NAME");
+String TEST_DIRS_REGEX		= p.getProperty("TEST_DIRS_REGEX");
+String JAVA_FILE_REGEX		= p.getProperty("JAVA_FILE_REGEX");
+String ALL_FILE_REGEX		= p.getProperty("ALL_FILE_REGEX");
+String SVM_HOME				= p.getProperty("SVM_HOME");
+String CLDC_API				= p.getProperty("CLDC_API"); 
+String CLDC_KEYSTORE 		= p.getProperty("CLDC_KEYSTORE"); 
+String PRE_VERIFIER_LOC		= p.getProperty("PRE_VERIFIER_LOC");
+String SKVM_LOC				= p.getProperty("SKVM_LOC");
+String DEFAULT_STOREPASS	= p.getProperty("DEFAULT_STOREPASS");
+String SKVM_OPTIONS			= p.getProperty("SKVM_OPTIONS");
+
+/* Test Counters */
+int totalPassed 	= 0;
+int totalFailed 	= 0;
+
+/* Setup svmtools classpath, including required BCEL library */
+String bcelClasspath 		= SVM_HOME + FS + "BCEL" + FS + "classes";
+String svmtoolsClasspath 	= SVM_HOME + FS + "SVMTools" + FS + "classes" +
+								PS + bcelClasspath;
+
+
+    /*---------------------------------------------------------------------------*\
+     *                           Helper Methods                         		 *
+    \*---------------------------------------------------------------------------*/	
+
+/**
+ * find
+ * Recursively searches for files or folders based on the given
+ * search criteria.
+ *
+ * @param current The starting directory for the search
+ * @param dirSearch True if we are searching only for directories
+ * @param regex The regular expression indicating the files/folders
+ * that are of interest.
+ * @return LinkedList containing File objects matching
+ * the search criteria.
+ */
+LinkedList find(File current, boolean dirSearch, String regex)
+{
+
+	/* Holds a number of File objects */
+	LinkedList testDirs = new LinkedList();
+
+	/* This filter only returns sub directories */
+	FileFilter subDirectory = new FileFilter() {
+		public boolean accept(File file) {
+			return file.isDirectory();
+		}
+	};
+
+	/* This filters what we are looking for */
+	FileFilter matchesTest = new FileFilter() {
+		public boolean accept(File file) {
+			if(dirSearch)
+			{
+				return file.getName().matches(regex) &&
+					file.isDirectory();
+			}
+			else
+			{
+				return file.getName().matches(regex) &&
+					!file.isDirectory();
+			}
+		}
+	};
+
+	/* Get subdirectories */
+	File[] dirs = current.listFiles(subDirectory);
+	
+	/* Get list of files/folders that match criteria */
+	File[] isTest = current.listFiles(matchesTest);
+
+	/* Add matches from sub folders */
+	for(int i = 0; dirs != null && i < dirs.length; i++)
+	{
+		Collection c = find(dirs[i], dirSearch, regex);
+		testDirs.addAll(c);
+	}
+	
+	/* Add any matches from this folder */
+	for(int i = 0; isTest != null && i < isTest.length; i++)
+		testDirs.add(isTest[i]);
+	
+	return testDirs;
+}
+
+
+
+/**
+ * delete
+ * Deletes file or directory including subdirectories.
+ *
+ * @param startPoint The file or directory to delete
+ */
+void delete(File startPointFile)
+{
+	String startPoint = startPointFile.getCanonicalPath();
+
+	if(!startPointFile.exists())
+	{
+		if(DEBUG_LEVEL > 1)
+			print("File doesn't exist: " + startPoint);
+		return;
+	}
+
+	if(startPointFile.isFile())
+	{
+		if(DEBUG_LEVEL > 1)
+			print("Removed file: " + startPoint);
+			
+		startPointFile.delete();
+		return;
+	}
+
+
+	/* Remove all files in tree */
+	LinkedList files = find(startPointFile, false, ALL_FILE_REGEX);
+	LinkedList dirs = find(startPointFile, true, ALL_FILE_REGEX);
+	
+	if(DEBUG_LEVEL > 2)
+		print("Removing files and folders from " + startPoint);
+
+	
+	while(files.size() > 0)
+	{
+		/* Grab each directory */
+		File f = (File)files.removeFirst();
+		
+		if(DEBUG_LEVEL > 1)
+			print("Removed file: " + f.getCanonicalPath());
+			
+		f.delete();
+	}
+	
+	while(dirs.size() > 0)
+	{
+		/* Grab each directory */
+		File f = (File)dirs.removeFirst();
+
+		if(DEBUG_LEVEL > 1)
+			print("Removed direcotry: " + f.getCanonicalPath());
+		f.delete();
+	}
+	
+	if(DEBUG_LEVEL > 1)
+		print("Removed direcotry: " + startPointFile.getCanonicalPath());
+			
+	startPointFile.delete();
+}
+
+/**
+ * exec2
+ * Runs the process, but allows us to redirect standard streams.
+ * NB. There is no mechanism to allow for input stream. If input
+ * is required, the program will hang waiting for input.
+ *
+ * @param String command line string.
+ * @return String String containing the error stream.
+ */
+String exec2(String command, boolean echo) throws IOException
+{
+	String s = null;
+	String err = "";
+	
+	if(DEBUG_LEVEL > 2)
+		print("Running: " + command);
+	try
+	{
+    	Process p = Runtime.getRuntime().exec(command);
+    
+    	BufferedReader stdInput = new BufferedReader(new 
+    		InputStreamReader(p.getInputStream()));
+    
+    	BufferedReader stdError = new BufferedReader(new 
+    		InputStreamReader(p.getErrorStream()));
+    
+    	/* null indicates end of stream */
+    	while ((s = stdInput.readLine()) != null) 
+    	{	
+    		if(echo)
+    		{
+    			System.out.println(s);
+    		}
+    	}
+    	
+    	/* Always show errors */
+    	while ((s = stdError.readLine()) != null) 
+    	{
+    		if(echo)
+    		{
+    			System.out.println(s);
+    		}
+    		err += s;
+   		}
+	}
+	catch (IOException e)
+	{
+	 	  error("An error occured while attempting to run " + command);
+	 	  error(e.getStackTrace());
+	}
+	
+	return err;
+}
+
+
+    /*---------------------------------------------------------------------------*\
+     *                           Testing Methods   	                         	 *
+    \*---------------------------------------------------------------------------*/	
+
+/**
+ * addTestFailed
+ * Increments the failed test count and prints out message.
+ */
+void addTestFailed(String testName)
+{
+	totalFailed++;
+	System.out.println(testName + "\t... FAILED");
+}
+
+/**
+ * addTestPassed
+ * Increments the passed test count and prints out message.
+ */
+void addTestPassed(String testName)
+{
+	totalPassed++;
+	System.out.println(testName + "\t... PASSED");
+}
+
+
+
+/* Very basic test harness. Check if the expected
+	error was part of standard error message */
+void checkResult(String expError, String testResult, String testName)
+{
+	/* Check all failure conditions */
+	if(expError == null || testResult == null)
+	{
+		addTestFailed(testName);
+		return;		
+	}
+	
+	if(expError.equals("") && testResult.length() > 0)
+	{
+		addTestFailed(testName);
+		return;
+	}
+	
+	if(result.indexOf(expectedError) < 0)
+	{
+		addTestFailed(testName);
+		return;
+	}
+	
+	/* It must have passed */
+	addTestPassed(testName);
+
+}
+
+
+
+    /*---------------------------------------------------------------------------*\
+     *                           Begin Test Procedure                         	 *
+    \*---------------------------------------------------------------------------*/	
+
+
+/* Start point is the current directory */
+File start = new File(".");
+
+/* start the search */
+LinkedList testDirs = find(start, true, TEST_DIRS_REGEX);
+
+if(DEBUG_LEVEL > 0)
+	print("Starting tests ");
+
+/* Start each individual test */
+while(testDirs.size() > 0)
+{
+	/* Grab each directory */
+	File f = (File)testDirs.removeFirst();
+
+	if(DEBUG_LEVEL > 1)
+		print(f.getPath());
+
+	/* Build testScript file object */
+	File testScript = new File(f, TEST_FILE_NAME);
+	if(!testScript.exists())
+	{	
+		if(DEBUG_LEVEL > 2)
+			error("No test script found. Skipping");
+		continue;
+	}
+	
+	/* Run script */
+	source(testScript.getCanonicalPath());
+}
+
+
+/* Print out test summary */
+print("");
+print("Total Tests: " + (totalPassed + totalFailed));
+print("Passed " + totalPassed + " (" + 
+			  ((double)totalPassed/(totalPassed + totalFailed))*100 + "%)");
+print("Failed " + totalFailed + " (" + 
+			  ((double)totalFailed/(totalPassed + totalFailed))*100 + "%)");

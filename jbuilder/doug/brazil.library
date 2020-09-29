@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<library>
+  <!--JBuilder Library Definition File-->
+  <fullname>brazil</fullname>
+  <class>
+    <path>[../../j2se/brazil-1.1-min.jar]</path>
+  </class>
+  <source>
+    <path>[../../j2se/brazil-1.1-srcs.jar]</path>
+  </source>
+  <lastmodsaved>1091732914000</lastmodsaved>
+</library>

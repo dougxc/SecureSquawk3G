@@ -1,0 +1,4296 @@
+/*
+ * Copyright 2004 Sun Microsystems, Inc. All Rights Reserved.
+ *
+ * This software is the proprietary information of Sun Microsystems, Inc.
+ * Use is subject to license terms.
+ *
+ * This is a part of the Squawk JVM.
+ */
+
+/**
+ * Check that slot clearing is being done correctly.
+ *
+ * One small compromise occurs with this option because the this_getfield
+ * and this_putfield bytecodes are really load0_getfield and load0_putfield
+ * bytecodes, and are used for both virtual methods and static methods.
+ * In the case where they are used in a virtial method the translator knows
+ * not to clear all the initialized reference slots because a null pointer
+ * exeception cannot occur (see com.sun.squawk.translator.ir.GetField#mayCauseGC()).
+ * In the case of a static the null pointer check must be made and so any
+ * uninitialized slots will be cleared. Because it is not easy to know if the
+ * currently executing method is static or virtual a conservative approach is
+ * taken where the this_getfield and this_putfield bytecodes never performs
+ * a slot clearing check.
+ */
+/*if[CHECK_SLOT_CLEARING]*/
+#define CHECK_SLOT_CLEARING true
+/*else[CHECK_SLOT_CLEARING]*/
+//#define CHECK_SLOT_CLEARING false
+/*end[CHECK_SLOT_CLEARING]*/
+
+#ifndef SILLYADDBUG
+#define NOSILLYADDBUG 1
+#else
+#define NOSILLYADDBUG 0
+#endif
+
+/*if[MACROIZE]*/
+#define   nextbytecode() continue
+/*else[MACROIZE]*/
+//#define nextbytecode() return
+//int     getArrayLength(Address oop);
+//Address getMP();
+//void    checkReferenceSlots();
+/*end[MACROIZE]*/
+
+
+        /*-----------------------------------------------------------------------*\
+         *                      Class state cache managemant                     *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * Add a cached class state association.
+         *
+         * @param klass the klass
+         * @param state the klass state
+
+         * @return its class state or null if not found
+         */
+/*MAC*/ void addClassState(Address $klass, Address $state) {
+            int i;
+            for (i = CLASS_CACHE_SIZE-1 ; i > 0  ; --i) {
+                cachedClass[i]      = cachedClass[i-1];
+                cachedClassState[i] = cachedClassState[i-1];
+            }
+            cachedClass[0]      = $klass;
+            cachedClassState[0] = $state;
+        }
+
+        /**
+         * Get a cached class state.
+         *
+         * @param klass the klass
+         * @return its class state or null if not found
+         */
+/*MAC*/ Address getClassState(Address $klass) {
+            int i;
+            cachedClassAccesses++;
+            for (i = 0 ; i < CLASS_CACHE_SIZE ; i++) {
+                if (cachedClass[i] == $klass) {
+                    cachedClassHits++;
+                    return cachedClassState[i];
+                }
+            }
+            return null;
+        }
+
+
+        /**
+         * Test to see if a class needs initializing.
+         *
+         * @param klass the klass
+         * @return true if it does.
+         */
+/*MAC*/ boolean needsInitializing(Address $klass) {
+            if (!java_lang_Class_mustClinit($klass)) {
+                return false;
+            }
+            return getClassState($klass) == null;
+        }
+
+
+
+
+        /**
+         * Invalidate the class state cache.
+         *
+         * @return true if it was already invalid.
+         */
+/*MAC*/ boolean invalidateClassStateCache() {
+            int i;
+            UWord res = 0;
+            for (i = 0 ; i < CLASS_CACHE_SIZE ; i++) {
+                res |= (UWord)cachedClass[i];
+                cachedClass[i] = null;
+            }
+            return res == 0;
+        }
+
+
+        /*-----------------------------------------------------------------------*\
+         *                           Instruction decoding                        *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * Fetch a byte from ip.
+         *
+         * @return the value
+         */
+/*DEF*/ signed char fetchByte() {
+            return getByteTyped(ip++, 0, AddressType_BYTECODE);
+        }
+
+        /**
+         * Fetch an unsigned byte from from ip.
+         *
+         * @return the value
+         */
+/*DEF*/ unsigned char fetchUByte() {
+            return getUByteTyped(ip++, 0, AddressType_BYTECODE);
+        }
+
+        /**
+         * Fetch a short from ip and place in fparm.
+         */
+/*DEF*/ void fetchShort() {
+            if (PLATFORM_UNALIGNED_LOADS) {
+                fparm = getShortTyped(ip, 0, AddressType_BYTECODE);
+                ip += sizeof(short);
+            } else {
+                if (PLATFORM_BIG_ENDIAN) {
+                    int b1 = fetchByte();
+                    int b2 = fetchUByte();
+                    fparm = (b1 << 8) | b2;
+                } else {
+                    int b1 = fetchUByte();
+                    int b2 = fetchByte();
+                    fparm = (b2 << 8) | b1;
+                }
+            }
+        }
+
+        /**
+         * Fetch an unsigned short from ip and place in fparm.
+         */
+/*DEF*/ void fetchUShort() {
+            if (PLATFORM_UNALIGNED_LOADS) {
+                fparm = getUShortTyped(ip, 0, AddressType_BYTECODE);
+                ip += sizeof(unsigned short);
+            } else {
+                int b1 = fetchUByte();
+                int b2 = fetchUByte();
+                if (PLATFORM_BIG_ENDIAN) {
+                    fparm = (b1 << 8) | b2;
+                } else {
+                    fparm = (b2 << 8) | b1;
+                }
+            }
+        }
+
+        /**
+         * Fetch an int from ip and place in fparm.
+         */
+/*DEF*/ void fetchInt() {
+            if (PLATFORM_UNALIGNED_LOADS) {
+                fparm = getIntTyped(ip, 0, AddressType_BYTECODE);
+                ip += sizeof(int);
+            } else {
+                int b1 = fetchUByte();
+                int b2 = fetchUByte();
+                int b3 = fetchUByte();
+                int b4 = fetchUByte();
+                if (PLATFORM_BIG_ENDIAN) {
+                    fparm = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+                } else {
+                    fparm = (b4 << 24) | (b3 << 16) | (b2 << 8) | b1;
+                }
+            }
+        }
+
+        /**
+         * Fetch a long from ip and place in flparm.
+         *
+         * @return the value
+         */
+/*DEF*/ void fetchLong() {
+            if (PLATFORM_UNALIGNED_LOADS) {
+                flparm = getLongTyped(ip, 0, AddressType_BYTECODE);
+                ip += sizeof(jlong);
+            } else {
+                jlong b1 = fetchUByte();
+                jlong b2 = fetchUByte();
+                jlong b3 = fetchUByte();
+                jlong b4 = fetchUByte();
+                jlong b5 = fetchUByte();
+                jlong b6 = fetchUByte();
+                jlong b7 = fetchUByte();
+                jlong b8 = fetchUByte();
+                if (PLATFORM_BIG_ENDIAN) {
+                    flparm = (b1 << 56) | (b2 << 48) | (b3 << 40) | (b4 << 32) | (b5 << 24) | (b6 << 16) | (b7 << 8) | b8;
+                } else {
+                    flparm = (b8 << 56) | (b7 << 48) | (b6 << 40) | (b5 << 32) | (b4 << 24) | (b3 << 16) | (b2 << 8) | b1;
+                }
+            }
+        }
+
+
+    /*-----------------------------------------------------------------------*\
+     *                                General                                *
+    \*-----------------------------------------------------------------------*/
+
+#if ASSUME
+        /**
+         * Asserts that the stack pointer is within the current stack and decrementing it
+         * won't overflow the stack limit.
+         */
+/*MAC*/ void checkPush() {
+/*if[REVERSE_PARAMETERS]*/
+            /* if (loeq(sp, sl)) fprintf(stderr, format("sp=%A, sl=%A, ss=%A\n"), sp, sl, ss); */
+            assume(sp > sl);
+            if (ss == java_lang_Thread_serviceStack) {
+                assume(loeq(sp, Address_add(java_lang_Thread_serviceStack, SERVICE_CHUNK_SIZE)));
+            } else {
+                assume(loeq(sp, &ss[getArrayLength(ss)]));
+            }
+/*else[REVERSE_PARAMETERS]*/
+//          int locals = getLocalCount(getMP());
+//          UWordAddress end = fp - locals + 1;
+//          assume(loeq(sp, end));
+/*end[REVERSE_PARAMETERS]*/
+        }
+#else
+#define checkPush()
+#endif /* ASSUME */
+
+        /**
+         * Pushes an int value onto the runtime stack.
+         */
+/*MAC*/ void pushInt(int $value) {
+/*if[REVERSE_PARAMETERS]*/
+            checkPush();
+            setUWordTyped(--sp, 0, AddressType_INT, (UWord)$value);
+/*else[REVERSE_PARAMETERS]*/
+//          setUWordTyped(sp++, 0, AddressType_INT, (UWord)$value);
+//          checkPush();
+/*end[REVERSE_PARAMETERS]*/
+        }
+
+        /**
+         * Pops an int value from the runtime stack.
+         */
+/*MAC*/ int popInt() {
+/*if[REVERSE_PARAMETERS]*/
+            return (int)getUWordTyped(sp++, 0, AddressType_INT);
+/*else[REVERSE_PARAMETERS]*/
+//          return (int)getUWordTyped(--sp, 0, AddressType_INT);
+/*end[REVERSE_PARAMETERS]*/
+        }
+
+        /**
+         * Pushes an address onto the runtime stack -- always downwards.
+         */
+/*MAC*/ void downPushAddress(Address $value) {
+            setObject(--sp, 0, $value);
+        }
+
+        /**
+         * Pushes an address onto the runtime stack.
+         */
+/*MAC*/ void pushAddress(Address $value) {
+/*if[REVERSE_PARAMETERS]*/
+            checkPush();
+            setObject(--sp, 0, $value);
+/*else[REVERSE_PARAMETERS]*/
+//          setObject(sp++, 0, $value);
+//          checkPush();
+/*end[REVERSE_PARAMETERS]*/
+        }
+
+        /**
+         * Pops an address from the runtime stack.
+         */
+/*MAC*/ Address popAddress() {
+/*if[REVERSE_PARAMETERS]*/
+            return getObject(sp++, 0);
+/*else[REVERSE_PARAMETERS]*/
+//          return getObject(--sp, 0);
+/*end[REVERSE_PARAMETERS]*/
+        }
+
+        /**
+         * Peeks the value on the top of the runtime stack.
+         */
+/*MAC*/ UWord peek() {
+            return getUWordTyped(sp, 0, AddressType_ANY);
+        }
+
+        /**
+         * Pushes a jlong value onto the runtime stack.
+         */
+#if SQUAWK_64
+/*MAC*/ void pushLong(jlong $value) {
+/*if[REVERSE_PARAMETERS]*/
+            checkPush();
+            setLong(--sp, 0, $value);
+            assume($value == getLong(sp, 0));
+/*else[REVERSE_PARAMETERS]*/
+//          setLong(sp++, 0, $value);
+//          checkPush();
+//          assume($value == getLong(sp, -1));
+/*end[REVERSE_PARAMETERS]*/
+        }
+#else
+/*MAC*/ void pushLong(jlong $value) {
+/*if[REVERSE_PARAMETERS]*/
+            checkPush();
+            --sp;
+            setLongAtWord(--sp, 0, $value);
+            assume($value == getLongAtWord(sp, 0));
+/*else[REVERSE_PARAMETERS]*/
+//          setLongAtWord(sp++, 0, $value);
+//          sp++;
+//          checkPush();
+//          assume($value == getLongAtWord(sp, -2));
+/*end[REVERSE_PARAMETERS]*/
+        }
+#endif
+
+        /**
+         * Pops a jlong value from the runtime stack.
+         */
+#if SQUAWK_64
+/*MAC*/ jlong popLong() {
+/*if[REVERSE_PARAMETERS]*/
+            return getLong(sp++, 0);
+/*else[REVERSE_PARAMETERS]*/
+//          return getLong(--sp, 0);
+/*end[REVERSE_PARAMETERS]*/
+        }
+#else
+/*MAC*/ jlong popLong() {
+/*if[REVERSE_PARAMETERS]*/
+            return getLongAtWordSpecial_pp(sp++, sp++);
+/*else[REVERSE_PARAMETERS]*/
+//          return getLongAtWordSpecial_mm(--sp, --sp);
+/*end[REVERSE_PARAMETERS]*/
+        }
+#endif
+
+        /**
+         * Pops a UWord from the runtime stack.
+         */
+/*MAC*/ UWord popWord() {
+/*if[REVERSE_PARAMETERS]*/
+            return getUWord(sp++, 0);
+/*else[REVERSE_PARAMETERS]*/
+//          return getUWord(--sp, 0);
+/*end[REVERSE_PARAMETERS]*/
+        }
+
+        /**
+         * Pushes a UWord to the runtime stack.
+         */
+/*MAC*/ void pushWord(UWord $value) {
+/*if[REVERSE_PARAMETERS]*/
+            checkPush();
+            setUWord(--sp, 0, $value);
+/*else[REVERSE_PARAMETERS]*/
+//          setUWord(sp++, 0, $value);
+//          checkPush();
+/*end[REVERSE_PARAMETERS]*/
+        }
+
+#if TYPEMAP
+        /**
+         * Pushes a UWord onto the runtime stack, recording the type of the value pushed.
+         */
+/*MAC*/ void pushAsType(UWord $value, char $type) {
+/*if[REVERSE_PARAMETERS]*/
+            checkPush();
+            setUWordTyped(--sp, 0, $type, $value);
+/*else[REVERSE_PARAMETERS]*/
+//          setUWordTyped(sp++, 0, $type, $value);
+//          checkPush();
+/*end[REVERSE_PARAMETERS]*/
+        }
+
+        /**
+         * Pops a UWord from the runtime stack, checking that its type matches a given type.
+         */
+/*MAC*/ UWord popAsType(char $type) {
+/*if[REVERSE_PARAMETERS]*/
+            return getUWordTyped(sp++, 0, $type);
+/*else[REVERSE_PARAMETERS]*/
+//          return getUWordTyped(--sp, 0, $type);
+/*end[REVERSE_PARAMETERS]*/
+        }
+#else
+#define pushAsType(value, type) pushWord(value)
+#define popAsType(type) popWord()
+#endif /* TYPEMAP */
+
+        /*-----------------------------------------------------------------------*\
+         *                          Bytecode dispatching                         *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * Prefix for bytecode with no parameter.
+         */
+/*DEF*/ void iparmNone() {
+        }
+
+        /**
+         * Prefix for bytecode with a byte parameter.
+         */
+/*DEF*/ void iparmByte() {
+            iparm = fetchByte();
+        }
+
+        /**
+         * Prefix for bytecode with an unsigned byte parameter.
+         */
+/*DEF*/ void iparmUByte() {
+            iparm = fetchUByte();
+        }
+
+        /**
+         * Add 256 to the next unsigned byte and jump to that bytecode execution.
+         */
+/*DEF*/ void do_escape() {
+            opcode = fetchUByte() + 256;
+            goto next;
+        }
+
+        /**
+         * Or the (parameter<<8) into the value of the next bytecode and then
+         * dispatch to the wide version of the opcode.
+         */
+/*DEF*/ void do_wide(int $n) {
+            opcode = fetchUByte() + OPC_WIDE_DELTA;
+            iparm  = fetchUByte() | ($n<<8);
+            goto next;
+        }
+
+        /**
+         * Load the inlined short as the value of the next bytecode and then
+         * dispatch to the wide version of the opcode.
+         */
+/*DEF*/ void do_wide_short() {
+            int fparm;
+            opcode = fetchUByte() + OPC_WIDE_DELTA;
+            fetchShort();
+            iparm = fparm;
+            goto next;
+        }
+
+        /**
+         * Load the inlined int as the value of the next bytecode and then
+         * dispatch to the wide version of the opcode.
+         */
+/*DEF*/ void do_wide_int() {
+            int fparm;
+            opcode = fetchUByte() + OPC_WIDE_DELTA;
+            fetchInt();
+            iparm = fparm;
+            goto next;
+        }
+
+        /**
+         * Or the (parameter<<8) in to the value of the next bytecode and then
+         * dispatch to the wide version of the opcode.
+         */
+/*DEF*/ void do_escape_wide(int $n) {
+            opcode = fetchUByte() + 256 + OPC_ESCAPE_WIDE_DELTA;
+            iparm  = fetchUByte() | ($n<<8);
+            goto next;
+        }
+
+        /**
+         * Load the inlined short as the value of the next bytecode and then
+         * dispatch to the wide version of the opcode.
+         */
+/*DEF*/ void do_escape_wide_short() {
+            int fparm;
+            opcode = fetchUByte() + 256 + OPC_ESCAPE_WIDE_DELTA;
+            fetchShort();
+            iparm = fparm;
+            goto next;
+        }
+
+        /**
+         * Load the inlined int as the value of the next bytecode and then
+         * dispatch to the wide version of the opcode.
+         */
+/*DEF*/ void do_escape_wide_int() {
+            int fparm;
+            opcode = fetchUByte() + 256 + OPC_ESCAPE_WIDE_DELTA;
+            fetchInt();
+            iparm = fparm;
+            goto next;
+        }
+
+
+        /*-----------------------------------------------------------------------*\
+         *                             Access to data                            *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * Gets a local variable ignoring the typemap.
+         *
+         * @param n int index to the local variable
+         * @return the value
+         */
+/*MAC*/ UWord peekLocal(int $n) {
+            return getUWordTyped(fp, FP_local0 - $n, AddressType_ANY);
+        }
+
+        /**
+         * Gets a local variable.
+         *
+         * @param n int index to the local variable
+         * @return the value
+         */
+/*MAC*/ UWord getLocal(int $n) {
+            return getUWordTyped(fp, FP_local0 - $n, getMutationType());
+        }
+
+        /**
+         * Sets a local variable.
+         *
+         * @param n int index to the local variable
+         * @param value the value to set
+         */
+/*MAC*/ void setLocal(int $n, UWord $value) {
+            setUWordTyped(fp, FP_local0 - $n, getMutationType(), $value);
+        }
+
+        /**
+         * Gets a local jlong variable.
+         *
+         * @param n int index to the local variable
+         * @return the value
+         */
+/*MAC*/ jlong getLocalLong(int $n) {
+            return getLongAtWord(fp, FP_local0 - $n);
+        }
+
+        /**
+         * Sets a local variable.
+         *
+         * @param n int index to the local variable
+         * @param value the value to set
+         */
+/*MAC*/ void setLocalLong(int $n, jlong $value) {
+            setLongAtWord(fp, FP_local0 - $n, $value);
+        }
+
+        /**
+         * Gets a parameter word.
+         *
+         * @param n int index to the local variable
+         * @return the value
+         */
+/*MAC*/ UWord getParmTyped(int $n, char $type) {
+            return getUWordTyped(fp, FP_parm0 + $n, $type);
+        }
+
+        /**
+         * Gets a parameter word.
+         *
+         * @param n int index to the local variable
+         * @return the value
+         */
+/*MAC*/ UWord getParm(int $n) {
+            return getParmTyped($n, getMutationType());
+        }
+
+        /**
+         * Sets a parameter word.
+         *
+         * @param n int index to the local variable
+         * @param value the value to set
+         */
+/*MAC*/ void setParm(int $n, UWord $value) {
+            setUWordTyped(fp, FP_parm0 + $n, getMutationType(), $value);
+        }
+
+        /**
+         * Gets a jlong parameter word.
+         *
+         * @param n int index to the local variable
+         * @return the value
+         */
+/*MAC*/ jlong getParmLong(int $n) {
+            return getLongAtWord(fp, FP_parm0 + $n);
+
+        }
+
+        /**
+         * Sets a jlong parameter word.
+         *
+         * @param n int index to the local variable
+         * @param value the value to set
+         */
+/*MAC*/ void setParmLong(int $n, jlong $value) {
+            setLongAtWord(fp, FP_parm0 + $n, $value);
+        }
+
+
+        /*-----------------------------------------------------------------------*\
+         *                             Utility code                              *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * Gets the current method pointer.
+         */
+/*MAC*/ Address getMP() {
+            return getObject(fp, FP_method);
+        }
+
+        /**
+         * Gets the current class pointer.
+         */
+/*MAC*/ Address getCP() {
+            return getObject(getMP(), HDR_methodDefiningClass);
+        }
+
+        /**
+         * Gets the object specified by an index from the class of the currently executing method.
+         *
+         * @param  index the index of the object
+         * @return the object
+         */
+/*MAC*/ Address getKlassObject(int $index) {
+            return ((Address *)java_lang_Class_objects(getCP()))[$index];
+        }
+
+        /**
+         * Gets the static method specified by an index from the class.
+         *
+         * @param  index the index of the method
+         * @return the method
+         */
+/*MAC*/ Address getStaticMethod(Address $cls, int $index) {
+            return ((Address *)java_lang_Class_staticMethods($cls))[$index];
+        }
+
+        /**
+         * Gets the virtual method specified by an index from the class.
+         *
+         * @param index the index of the method
+         * @return the method
+         */
+/*MAC*/ Address getVirtualMethod(Address $cls, int $index) {
+            return ((Address *)java_lang_Class_virtualMethods($cls))[$index];
+        }
+
+        /**
+         * Gets the length of an array object.
+         *
+         * @param  oop the pointer to the array.
+         * @return the length
+         */
+/*MAC*/ int getArrayLength(Address $oop) {
+            return (int)(getUWord($oop, HDR_length) >> 2);
+        }
+
+        /**
+         * Sets the length of an array object.
+         *
+         * @param oop the pointer to the array
+         * @param size the length
+         * @return false if length was too large
+         */
+/*MAC*/ boolean setArrayLength(Address $oop, int $size) {
+            if ($size > 0x3FFFFFF) {
+                return false;
+            }
+            setUWord($oop, HDR_length, ($size << HDR_headerTagBits) | HDR_arrayHeaderTag);
+            return true;
+        }
+
+        /**
+         * Gets the Klass or the ObjectAssociation of an object.
+         *
+         * @param  oop the pointer to the object.
+         * @return the Klass ot the ObjectAssociation
+         */
+#if ASSUME
+/*MAC*/ Address getClassOrAssociation(Address $oop) {
+            /* Catches an attempt to dereference a forwarding pointer */
+            assume(((UWord)getObject($oop, HDR_klass) & HDR_headerTagMask) == 0);
+            return getObject($oop, HDR_klass);
+        }
+#else
+/*MAC*/ Address getClassOrAssociation(Address $oop) {
+            return getObject($oop, HDR_klass);
+        }
+#endif
+        /**
+         * Gets the class of an object.
+         *
+         * @param  oop the pointer to the object.
+         * @return the class
+         */
+/*MAC*/ Address getClass(Address $oop) {
+            return java_lang_Class_self(getClassOrAssociation($oop));
+        }
+
+        /**
+         * Decodes a counter from the minfo area.
+         *
+         * @param mp     the pointer to the method
+         * @param offset the ordinal offset of the counter (e.g. 1st, 2nd, ...  etc.)
+         * @return the value
+         */
+        int minfoValue(Address mp, int offset) {
+            int p = HDR_methodInfoStart;
+            int b = getByte(mp, p--) & 0xFF;
+            int val = -1;
+            assume((b & 0x80/*FMT*/) != 0);
+            while(offset-- > 0) {
+                val = getByte(mp, p--) & 0xFF;
+                if (val > 127) {
+                    val = val & 0x7F;
+                    val = val << 8;
+                    val = val | getByte(mp, p--) & 0xFF;
+                }
+            }
+            assume(val >= 0);
+            return val;
+        }
+
+        /**
+         * Gets the b0 byte of the method header.
+         *
+         * @param mp the method pointer
+         * @return the value
+         */
+/*MAC*/ int getb0(Address $mp) {
+            return getByte($mp, HDR_methodInfoStart) & 0xFF;
+        }
+
+        /**
+         * Gets the b1 byte of the method header.
+         *
+         * @param mp the method pointer
+         * @return the value
+         */
+/*MAC*/ int getb1(Address $mp) {
+            return getByte($mp, HDR_methodInfoStart - 1) & 0xFF;
+        }
+
+        /**
+         * Decode the stack count.
+         *
+         * @param b0 the first byte
+         * @param b1 the second byte
+         * @return the value
+         */
+/*MAC*/ int decodeStackCount(int $b0, int $b1) {
+            return $b1 & 0x1F;
+        }
+
+        /**
+         * Decode the stack count.
+         *
+         * @param b0 the first byte
+         * @param b1 the second byte
+         * @return the value
+         */
+/*MAC*/ int decodeLocalCount(int $b0, int $b1) {
+            return ((($b0 << 8) | $b1) >> 5) & 0x1F;
+        }
+
+        /**
+         * Decode the Parm count.
+         *
+         * @param b0 the first byte
+         * @return the value
+         */
+/*MAC*/ int decodeParmCount(int $b0) {
+            return $b0 >> 2;
+        }
+
+        /**
+         * Gets the number of stack words used by a method.
+         *
+         * @param mp the method pointer
+         * @return the count
+         */
+/*MAC*/ int getStackCount(Address $mp) {
+            int b0 = getb0($mp);
+            if (b0 < 128) {
+                int b1 = getb1($mp);
+                return decodeStackCount(b0, b1);
+            } else {
+                return minfoValue($mp, 1);
+            }
+        }
+
+        /**
+         * Gets the number of local words used by a method.
+         *
+         * @param mp the method pointer
+         * @return the count
+         */
+/*MAC*/ int getLocalCount(Address $mp) {
+            int b0 = getb0($mp);
+            if (b0 < 128) {
+                int b1 = getb1($mp);
+                return decodeLocalCount(b0, b1);
+            } else {
+                return minfoValue($mp, 2);
+            }
+        }
+
+        /**
+         * Gets the number of parameter words used by a method.
+         *
+         * @param mp the method pointer
+         * @return the count
+         */
+/*MAC*/ int getParmCount(Address $mp) {
+            int b0 = getb0($mp);
+            if (b0 < 128) {
+                return decodeParmCount(b0);
+            } else {
+                return minfoValue($mp, 3);
+            }
+        }
+
+        /**
+         * Get the offset to the last byte of the Minfo area.
+         *
+         * @param np the pointer to the method
+         * @return the length in bytes
+         */
+/*MAC*/ int getOffsetToLastMinfoByte(Address $mp) {
+            int p = HDR_methodInfoStart;
+            int b0 = getByte($mp, p--) & 0xFF;
+            if (b0 < 128) {
+                p--;
+            } else {
+                int offset = 3;
+                if ((b0 & java_lang_MethodBody_FMT_E) != 0) {
+                    offset++;
+                }
+                if ((b0 & java_lang_MethodBody_FMT_R) != 0) {
+                    offset++;
+                }
+                if ((b0 & java_lang_MethodBody_FMT_T) != 0) {
+                    offset++;
+                }
+                while(offset-- > 0) {
+                    int val = getByte($mp, p--) & 0xFF;
+                    if (val > 127) {
+                        p--;
+                    }
+                }
+            }
+            return p + 1;
+        }
+
+#ifdef _MSC_VER
+#pragma auto_inline(off)
+#endif
+
+        /**
+         * Gets the number of local words plus stack words used by a method.
+         *
+         * @param mp the method pointer
+         * @return the count
+         */
+        int getLocalCountPlusStackCountIfNotReversingParms(Address mp) {
+            int res = getLocalCount(mp);
+/*if[REVERSE_PARAMETERS]*/
+/*else[REVERSE_PARAMETERS]*/
+//          res += getStackCount(mp);
+/*end[REVERSE_PARAMETERS]*/
+            return res;
+        }
+
+#ifdef _MSC_VER
+#pragma auto_inline(off)
+#endif
+
+        /**
+         * Clears the operand stack given the number of locals in the current method.
+         *
+         * @param delta the number of words to adjust by
+         */
+/*MAC*/ void resetStackPointerFromDelta(int $delta) {
+            sp = fp - $delta + 1; /* + 1 so sp points one word before first stack word */
+        }
+
+        /**
+         * Clears the operand stack.
+         */
+/*MAC*/ void resetStackPointer() {
+            Address mp = getMP();
+            int delta;
+            int b0 = getb0(mp);
+            if (b0 < 128) {
+                int b1 = getb1(mp);
+                delta = decodeLocalCount(b0, b1);
+/*if[REVERSE_PARAMETERS]*/
+/*else[REVERSE_PARAMETERS]*/
+//              delta += decodeStackCount(b0, b1);
+/*end[REVERSE_PARAMETERS]*/
+            } else {
+                delta = getLocalCountPlusStackCountIfNotReversingParms(mp);
+            }
+            resetStackPointerFromDelta(delta);
+        }
+
+        /**
+         * Clears the operand stack when REVERSE_PARAMETERS is true.
+         */
+/*MAC*/ void resetStackPointerIfRevParms() {
+/*if[REVERSE_PARAMETERS]*/
+            resetStackPointer();
+/*end[REVERSE_PARAMETERS]*/
+        }
+
+        /**
+         * Clears the operand stack when REVERSE_PARAMETERS is false.
+         */
+/*MAC*/ void resetStackPointerIfNotRevParms() {
+/*if[REVERSE_PARAMETERS]*/
+/*else[REVERSE_PARAMETERS]*/
+//          resetStackPointer();
+/*end[REVERSE_PARAMETERS]*/
+        }
+
+
+        /*-----------------------------------------------------------------------*\
+         *                                Upcalls                                *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * Cause the Java method to be invoked (not resetting the sp).
+         *
+         * @param mth the address of the method
+         */
+/*MAC*/ void callNoReset(Address $mth) {
+            assume($mth != 0);
+            assume(java_lang_Class_classID(getClass($mth)) == CID_BYTECODE_ARRAY);
+            checkReferenceSlots();
+            downPushAddress(ip);
+            ip = $mth;
+        }
+
+        /**
+         * Cause the Java method to be invoked.
+         *
+         * @param mth the address of the method
+         */
+/*MAC*/ void call(Address $mth) {
+            resetStackPointerIfNotRevParms();
+            callNoReset($mth);
+        }
+
+
+        /**
+         * Switch to the 'other' thread.
+         */
+/*MAC*/ void threadswitchmain() {
+            Address oldThread  = java_lang_Thread_currentThread;
+            Address oldStack   = (Address)java_lang_Thread_stack(oldThread);
+            UWord   oldMP      = (UWord)getObject(fp, FP_method);
+            UWord   ipOffset   = ((UWord)ip) - oldMP;
+            Address newThread  = java_lang_Thread_otherThread;
+            Address newStack   = (Address)java_lang_Thread_stack(newThread);
+            assume(newStack != null);
+            assume(!java_lang_GC_collecting);
+            assume(oldStack == (Address)ss);
+
+            /*fprintf(stdout, "%%%%%%%%%%%%%% fp = %d oldMP = %d ipoffset = %d ip=%d tid=%d\n", fp, oldMP, ipOffset, ip, java_lang_Thread_threadNumber(oldThread));*/
+
+            /*
+             * Save current VM state in the current thread.
+             */
+            setObject(oldStack, SC_lastFP, fp);
+            setUWord(oldStack, SC_lastIP, ipOffset);
+
+            /*
+             * Swap the threads and setup the current isolate.
+             */
+            java_lang_Thread_otherThread = oldThread;
+            java_lang_Thread_currentThread = newThread;
+
+            /*
+             * If the new thread is not the service thread then switch the
+             * the current isolate to the new thread's isolate. This test means
+             * that code run on the service thread will run in the isolate
+             * context of the caller.
+             */
+            if (newThread != java_lang_Thread_serviceThread) {
+                Address newIsolate = (Address)java_lang_Thread_isolate(newThread);
+                if (java_lang_VM_currentIsolate != newIsolate) {
+                    java_lang_VM_currentIsolate = newIsolate;
+                    invalidateClassStateCache();
+                }
+                runningOnServiceThread = false;
+
+                /*
+                 * If not simply switching back from the service thread to its caller
+                 * then check that the number of pending monitor enter operations is zero.
+                 */
+                assume(oldThread == java_lang_Thread_serviceThread || pendingMonitorStackPointer == 0);
+
+            } else {
+                runningOnServiceThread = true;
+            }
+
+            /*
+             * Switch to the new context.
+             */
+            setStack(newStack);
+            fp = getObject(ss, SC_lastFP);
+            if (fp == null) {   /* New thread                   */
+                fp = null;      /* The return FP should be zero */
+                ip = null;      /* The return IP should be zero */
+                sp = &ss[getArrayLength(ss)];
+/*if[REVERSE_PARAMETERS]*/
+                call(java_lang_VM_do_callRun);
+/*else[REVERSE_PARAMETERS]*/
+//              downPushAddress(ip);            /* don't call call() ... */
+//              ip = java_lang_VM_do_callRun;   /* because resetStackPointer() will not work */
+/*end[REVERSE_PARAMETERS]*/
+                /*fprintf(stderr, "callRun: fp = %d sp=%d ip=%d tid = %d\n", fp, sp, ip, java_lang_Thread_threadNumber(newThread));*/
+            } else {
+                Address newMP = getObject(fp, FP_method);
+                ipOffset      = getUWord(ss, SC_lastIP);
+                resetStackPointer();
+                ip = (ByteAddress)newMP + ipOffset;
+                /*fprintf(stderr, "fp = %d newMP = %d ipoffset = %d ip=%d tid=%d\n", fp, newMP, ipOffset, ip, java_lang_Thread_threadNumber(newThread));*/
+            }
+        }
+
+        /**
+         * Switch to the 'other' thread.
+         *
+         * @param code the service operation code
+         */
+/*MAC*/ void threadSwitch(int $code) {
+            /*
+             * Set the service operation code.
+             */
+            java_lang_ServiceOperation_code = $code;
+/*if[MACROIZE]*/
+            goto threadswitchstart;
+/*else[MACROIZE]*/
+//          threadswitchmain();
+/*end[MACROIZE]*/
+        }
+
+        /**
+         * Switch to the service thread to throw an exception.
+         */
+/*MAC*/ void threadSwitchFor(int $code) {
+            assume(!runningOnServiceThread);
+            java_lang_Thread_otherThread = java_lang_Thread_serviceThread;
+            threadSwitch($code);
+        }
+
+        /**
+         * Execute a service operation for channel I/O.
+         */
+/*MAC*/ void executeCIO(int $context, int $op, int $channel, int $i1, int $i2, int $i3, int $i4, int $i5, int $i6, Address $o1, Address $o2) {
+            java_lang_ServiceOperation_context = $context;
+            java_lang_ServiceOperation_op      = $op;
+            java_lang_ServiceOperation_channel = $channel;
+            java_lang_ServiceOperation_i1      = $i1;
+            java_lang_ServiceOperation_i2      = $i2;
+            java_lang_ServiceOperation_i3      = $i3;
+            java_lang_ServiceOperation_i4      = $i4;
+            java_lang_ServiceOperation_i5      = $i5;
+            java_lang_ServiceOperation_i6      = $i6;
+            java_lang_ServiceOperation_o1      = $o1;
+            java_lang_ServiceOperation_o2      = $o2;
+            if (runningOnServiceThread) {
+                void cioExecute(void);
+                cioExecute();
+            } else {
+                threadSwitchFor(java_lang_ServiceOperation_CHANNELIO);
+            }
+        }
+
+
+        /*-----------------------------------------------------------------------*\
+         *                               Constants                               *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * Pushes a constant value.
+         *
+         * <p>
+         * Java Stack: ... -> ..., INT
+         * <p>
+         *
+         * @param n the integer value
+         */
+/*MAC*/ void do_const(Offset $n) {
+            pushInt($n);
+        }
+
+        /**
+         * Pushes a constant null value.
+         *
+         * <p>
+         * Java Stack: ... -> ..., INT
+         * <p>
+         *
+         * @param n the integer value
+         */
+/*MAC*/ void do_const_null() {
+            pushAddress(0);
+        }
+
+        /**
+         * Pushes a constant byte value.
+         *
+         * <p>
+         * Java Stack: ... -> ..., INT
+         * <p>
+         */
+/*MAC*/ void do_const_byte() {
+            pushInt(fetchByte());
+        }
+
+        /**
+         * Pushes a constant short value.
+         *
+         * <p>
+         * Java Stack: ... -> ..., INT
+         * <p>
+         */
+/*MAC*/ void do_const_short() {
+            int fparm;
+            fetchShort();
+            pushInt(fparm);
+        }
+
+        /**
+         * Pushes a constant char value.
+         *
+         * <p>
+         * Java Stack: ... -> ..., INT
+         * <p>
+         */
+/*MAC*/ void do_const_char() {
+            int fparm;
+            fetchUShort();
+            pushInt(fparm);
+        }
+
+        /**
+         * Pushes a constant int value.
+         *
+         * <p>
+         * Java Stack: ... -> ..., INT
+         * <p>
+         */
+/*MAC*/ void do_const_int() {
+            int fparm;
+            fetchInt();
+            pushInt(fparm);
+        }
+
+        /**
+         * Pushes a constant long value.
+         *
+         * <p>
+         * Java Stack: ... -> ..., LONG
+         * <p>
+         */
+/*MAC*/ void do_const_long() {
+            jlong flparm;
+            fetchLong();
+            pushLong(flparm);
+        }
+
+        /**
+         * Pushes a constant floa value.
+         *
+         * <p>
+         * Java Stack: ... -> ..., FLOAT
+         * <p>
+         */
+/*MAC*/ void do_const_float() {
+            int fparm;
+            fetchInt();
+            pushInt(fparm);
+        }
+
+        /**
+         * Pushes a constant double value.
+         *
+         * <p>
+         * Java Stack: ... -> ..., DOUBLE
+         * <p>
+         */
+/*MAC*/ void do_const_double() {
+            jlong flparm;
+            fetchLong();
+            pushLong(flparm);
+        }
+
+        /**
+         * Pushes a constant object value.
+         *
+         * <p>
+         * Java Stack: ... -> ..., OOP
+         * <p>
+         *
+         * @param n the index into the class object table
+         */
+/*MAC*/ void do_object(int $n) {
+            pushAddress(getKlassObject($n));
+        }
+
+        /**
+         * Pushes a constant object value.
+         *
+         * <p>
+         * Java Stack: ... -> ..., OOP
+         * <p>
+         */
+/*MAC*/ void do_object0() {
+            do_object(iparm);
+        }
+
+
+        /*-----------------------------------------------------------------------*\
+         *                          Access to locals                             *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * Pushes a single word local.
+         *
+         * <p>
+         * Java Stack: ... -> ..., VALUE
+         * <p>
+         *
+         * @param n the index to local
+         */
+/*MAC*/ void do_load(int $n) {
+            pushAsType(getLocal($n), getMutationType());
+        }
+
+        /**
+         * Pushes a single word local.
+         *
+         * <p>
+         * Java Stack: ... -> ..., VALUE
+         * <p>
+         */
+/*MAC*/ void do_load0() {
+            do_load(iparm);
+        }
+
+        /**
+         * Pops a single word local.
+         *
+         * <p>
+         * Java Stack: ..., VALUE -> ...
+         * <p>
+         *
+         * @param n the index to local
+         */
+/*MAC*/ void do_store(int $n) {
+            setLocal($n, popAsType(getMutationType()));
+        }
+
+        /**
+         * Pops a single word local.
+         *
+         * <p>
+         * Java Stack: ..., VALUE -> ...
+         * <p>
+         */
+/*MAC*/ void do_store0() {
+            do_store(iparm);
+        }
+
+        /**
+         * Pushes a double word local.
+         *
+         * <p>
+         * Java Stack: ... -> ..., LONG
+         * <p>
+         */
+/*MAC*/ void do_load_i2() {
+            if (TYPEMAP & SQUAWK_64) {
+                if (getMutationType() == AddressType_REF) {
+                    pushAsType(getLocal(iparm), AddressType_REF);
+                } else if (getMutationType() == AddressType_UWORD) {
+                    pushAsType(getLocal(iparm), AddressType_UWORD);
+                } else {
+                    pushLong(getLocalLong(iparm));
+                }
+            } else {
+                pushLong(getLocalLong(iparm));
+            }
+        }
+
+        /**
+         * Pops a double word local.
+         *
+         * <p>
+         * Java Stack: ..., LONG -> ...
+         * <p>
+         */
+/*MAC*/ void do_store_i2() {
+            if (TYPEMAP & SQUAWK_64) {
+                if (getMutationType() == AddressType_REF) {
+                    setLocal(iparm, popAsType(AddressType_REF));
+                } else if (getMutationType() == AddressType_UWORD) {
+                    setLocal(iparm, popAsType(AddressType_UWORD));
+                } else {
+                    setLocalLong(iparm, popLong());
+                }
+            } else {
+                setLocalLong(iparm, popLong());
+            }
+        }
+
+        /**
+         * Increment a single word local.
+         *
+         * <p>
+         * Java Stack: ... -> ...
+         * <p>
+         */
+/*MAC*/ void do_inc() {
+            setLocal(iparm, getLocal(iparm) + 1);
+        }
+
+        /**
+         * Decrement a single word local.
+         *
+         * <p>
+         * Java Stack: ... -> ...
+         * <p>
+         */
+/*MAC*/ void do_dec() {
+            setLocal(iparm, getLocal(iparm) - 1);
+        }
+
+
+        /*-----------------------------------------------------------------------*\
+         *                         Access to parameters                          *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * Pushes a single word parm.
+         *
+         * <p>
+         * Java Stack: ... -> ..., VALUE
+         * <p>
+         *
+         * @param n the index to local
+         */
+/*MAC*/ void do_loadparm(int $n) {
+            pushAsType(getParm($n), getMutationType());
+        }
+
+        /**
+         * Pushes a single word parm.
+         *
+         * <p>
+         * Java Stack: ... -> ..., VALUE
+         * <p>
+         */
+/*MAC*/ void do_loadparm0() {
+            do_loadparm(iparm);
+        }
+
+        /**
+         * Pops a single word parm.
+         *
+         * <p>
+         * Java Stack: ..., VALUE -> ...
+         * <p>
+         */
+/*MAC*/ void do_storeparm(int $n) {
+            setParm($n, popAsType(getMutationType()));
+        }
+
+        /**
+         * Pops a single word parm.
+         *
+         * <p>
+         * Java Stack: ..., VALUE -> ...
+         * <p>
+         */
+/*MAC*/ void do_storeparm0() {
+            do_storeparm(iparm);
+        }
+
+        /**
+         * Pushes a double word parm.
+         *
+         * <p>
+         * Java Stack: ... -> ..., LONG
+         * <p>
+         */
+/*MAC*/ void do_loadparm_i2() {
+            if (TYPEMAP & SQUAWK_64) {
+                if (getMutationType() == AddressType_REF) {
+                    pushAsType(getParm(iparm), AddressType_REF);
+                } else if (getMutationType() == AddressType_UWORD) {
+                    pushAsType(getParm(iparm), AddressType_UWORD);
+                } else {
+                    pushLong(getParmLong(iparm));
+                }
+            } else {
+                pushLong(getParmLong(iparm));
+            }
+        }
+
+        /**
+         * Pops a double word parm.
+         *
+         * <p>
+         * Java Stack: ..., VALUE -> ...
+         * <p>
+         *
+         */
+/*MAC*/ void do_storeparm_i2() {
+            if (TYPEMAP & SQUAWK_64) {
+                if (getMutationType() == AddressType_REF) {
+                    setParm(iparm, popAsType(AddressType_REF));
+                } else if (getMutationType() == AddressType_UWORD) {
+                    setParm(iparm, popAsType(AddressType_UWORD));
+                } else {
+                    setParmLong(iparm, popLong());
+                }
+            } else {
+                setParmLong(iparm, popLong());
+            }
+        }
+
+        /**
+         * Increment a single word parm.
+         *
+         * <p>
+         * Java Stack: ... -> ...
+         * <p>
+         */
+/*MAC*/ void do_incparm() {
+            setParm(iparm, getParm(iparm) + 1);
+        }
+
+        /**
+         * Decrement a single word parm.
+         *
+         * <p>
+         * Java Stack: ... -> ...
+         * <p>
+         */
+/*MAC*/ void do_decparm() {
+            setParm(iparm, getParm(iparm) - 1);
+        }
+
+
+    /*-----------------------------------------------------------------------*\
+     *                               Branching                               *
+    \*-----------------------------------------------------------------------*/
+
+    /**
+     * Backward branch target in system code.
+     *
+     * <p>
+     * Java Stack:  _  ->  _
+     * <p>
+     */
+/*INL*/ void bbtarget_trace() {
+#ifdef TRACE
+            jlong count;
+            int low = (int)((branchCountLow + 1) & 0xFFFFFFFF);
+            branchCountLow = low;
+            if (low == 0) {
+                UWord high = branchCountHigh + 1;
+                branchCountHigh = high;
+            }
+            count = getBranchCount();
+            if (statsFrequency != 0 && (count % statsFrequency) == 0) {
+                printCacheStats();
+            }
+            if (count >= getTraceStart()) {
+                tracing = true;
+            }
+            if (count >= getTraceEnd()) {
+                fprintf(stderr, format("\n** Reached branch count limit %L **\n"), getBranchCount());
+                stopVM(-1);
+            }
+#endif
+        }
+
+
+    /**
+     * Backward branch target in system code.
+     *
+     * <p>
+     * Java Stack:  _  ->  _
+     * <p>
+     */
+/*MAC*/ void do_bbtarget_sys() {
+            osbackbranch();
+            bbtarget_trace();
+            checkReferenceSlots();
+        }
+
+        /**
+         * Backward branch target in applicaton code.
+         *
+         * <p>
+         * Java Stack:  _  ->  _
+         * <p>
+         */
+/*MAC*/ void do_bbtarget_app() {
+            do_bbtarget_sys();
+            if (bc++ >= 0) {
+                bc = -TIMEQUANTA;
+                call(java_lang_VM_do_yield);
+            }
+        }
+
+        /**
+         * Unconditional branch.
+         *
+         * <p>
+         * Java Stack: ... -> ...  (Forward branches);
+         * <p>
+         * Java Stack:  _  ->  _   (Backward branches);
+         * <p>
+         */
+/*MAC*/ void do_goto() {
+            ip += iparm;
+        }
+
+        /**
+         * Conditional branch.
+         *
+         * <p>
+         * Java Stack: ..., VALUE, [VALUE] -> ...  (Forward branches);
+         * <p>
+         * Java Stack:      VALUE, [VALUE] ->  _   (Backward branches);
+         * <p>
+         *
+         * @param operands the number of operands (1 or 2)
+         * @param cc       the condition code
+         * @param type     the type of the data to compare
+         */
+/*MAC*/ void do_if(int $operands, int $cc, Type $type) {
+            switch ($type) {
+                case OOP: {
+                    Address r = ($operands == 1) ? 0 : popAddress();
+                    Address l = popAddress();
+                    switch ($cc) {
+                        case EQ: if (l == r) { do_goto(); } break;
+                        case NE: if (l != r) { do_goto(); } break;
+                        default: shouldNotReachHere();
+                    }
+                    break;
+                }
+                case INT: {
+                    int r = ($operands == 1) ? 0 : popInt();
+                    int l = popInt();
+                    switch ($cc) {
+                        case EQ: if (l == r) { do_goto(); } break;
+                        case NE: if (l != r) { do_goto(); } break;
+                        case LT: if (l <  r) { do_goto(); } break;
+                        case LE: if (l <= r) { do_goto(); } break;
+                        case GT: if (l >  r) { do_goto(); } break;
+                        case GE: if (l >= r) { do_goto(); } break;
+                        default: shouldNotReachHere();
+                    }
+                    break;
+                }
+                case FLOAT: {
+                    int r = ($operands == 1) ? 0 : popInt();
+                    int l = popInt();
+                    switch ($cc) {
+                        case EQ: if (ib2f(l) == ib2f(r)) { do_goto(); } break;
+                        case NE: if (ib2f(l) != ib2f(r)) { do_goto(); } break;
+                        case LT: if (ib2f(l) <  ib2f(r)) { do_goto(); } break;
+                        case LE: if (ib2f(l) <= ib2f(r)) { do_goto(); } break;
+                        case GT: if (ib2f(l) >  ib2f(r)) { do_goto(); } break;
+                        case GE: if (ib2f(l) >= ib2f(r)) { do_goto(); } break;
+                        default: shouldNotReachHere();
+                    }
+                    break;
+                }
+                case LONG: {
+                    jlong r = ($operands == 1) ? 0 : popLong();
+                    jlong l = popLong();
+                    switch ($cc) {
+                        case EQ: if (l == r) { do_goto(); } break;
+                        case NE: if (l != r) { do_goto(); } break;
+                        case LT: if (l <  r) { do_goto(); } break;
+                        case LE: if (l <= r) { do_goto(); } break;
+                        case GT: if (l >  r) { do_goto(); } break;
+                        case GE: if (l >= r) { do_goto(); } break;
+                        default: shouldNotReachHere();
+                    }
+                    break;
+                }
+                case DOUBLE: {
+                    jlong r = ($operands == 1) ? 0 : popLong();
+                    jlong l = popLong();
+                    switch ($cc) {
+                        case EQ: if (lb2d(l) == lb2d(r)) { do_goto(); } break;
+                        case NE: if (lb2d(l) != lb2d(r)) { do_goto(); } break;
+                        case LT: if (lb2d(l) <  lb2d(r)) { do_goto(); } break;
+                        case LE: if (lb2d(l) <= lb2d(r)) { do_goto(); } break;
+                        case GT: if (lb2d(l) >  lb2d(r)) { do_goto(); } break;
+                        case GE: if (lb2d(l) >= lb2d(r)) { do_goto(); } break;
+                        default: shouldNotReachHere();
+                    }
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * Get a table switch parameter.
+         */
+/*DEF*/ void getSwitchEntry(int $size) {
+            if ($size == 2) {
+                fetchShort();
+            } else {
+                fetchInt();
+            }
+        }
+
+        /**
+         * General table switch.
+         *
+         * <p>
+         * Java Stack: KEY ->  _
+         * <p>
+         */
+/*MAC*/ void do_tableswitch(Type $type) {
+            int size = ($type == INT) ? 4 : 2;
+            int fparm;
+            int key;
+            int low;
+            int high;
+
+            /*
+             * Skip the padding.
+             */
+            while ((((UWord)ip) % size) != 0) {
+                fetchByte();
+            }
+
+            /*
+             * Read the low and high bound and the default case.
+             */
+            getSwitchEntry(size);
+            low   = fparm;
+            getSwitchEntry(size);
+            high  = fparm;
+            getSwitchEntry(size);
+            iparm = fparm;
+
+            /*
+             * Get the key.
+             */
+            key = popInt();
+
+            /*
+             * Calculate the new IP.
+             */
+            if (key >= low && key <= high) {
+                if (size == 4) {
+                    iparm = getIntTyped(ip, key-low, AddressType_ANY);
+                } else {
+                    iparm = getShortTyped(ip, key-low, AddressType_ANY);
+                }
+            }
+
+            /*
+             * Update the IP.
+             */
+            do_goto();
+        }
+
+
+        /*-----------------------------------------------------------------------*\
+         *                          Static field access                          *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * getstatic.
+         *
+         * <p>
+         * Java Stack: CLASS -> VALUE
+         * <p>
+         *
+         * @param t the operation data type
+         */
+/*MAC*/ void do_getstatic(Type $t) {
+            Address klass = popAddress();
+            Address state = getClassState(klass);
+            if (state != null) {
+                checkReferenceSlots();
+                switch ($t) {
+                    case OOP:       pushAddress(getObject(state, iparm));      break;
+                    case INT:
+                    case FLOAT:     pushInt(getUWord(state, iparm));           break;
+                    case LONG:
+                    case DOUBLE:    pushLong(getLongAtWord(state, iparm));     break;
+                    default:        shouldNotReachHere();
+                }
+            } else {
+                pushAddress(klass);
+                pushInt(iparm);
+                switch ($t) {
+                    case OOP:       call(java_lang_VM_do_getStaticOop);        break;
+                    case INT:
+                    case FLOAT:     call(java_lang_VM_do_getStaticInt);        break;
+                    case LONG:
+                    case DOUBLE:    call(java_lang_VM_do_getStaticLong);       break;
+                    default:        shouldNotReachHere();
+                }
+            }
+        }
+
+        /**
+         * class_getstatic.
+         *
+         * <p>
+         * Java Stack: _ -> VALUE
+         * <p>
+         *
+         * @param t the operation data type
+         */
+/*MAC*/ void do_class_getstatic(Type $t) {
+            pushAddress(getCP());
+            do_getstatic($t);
+        }
+
+        /**
+         * putstatic.
+         *
+         * <p>
+         * Java Stack: VALUE, CLASS -> _
+         * <p>
+         *
+         * @param t the operation data type
+         */
+/*MAC*/ void do_putstatic(Type $t) {
+            Address klass = popAddress();
+            Address state = getClassState(klass);
+            if (state != null) {
+                checkReferenceSlots();
+                switch ($t) {
+                    case OOP:       setObject(state, iparm, popAddress());     break;
+                    case INT:
+                    case FLOAT:     setUWord(state, iparm, popInt());          break;
+                    case LONG:
+                    case DOUBLE:    setLongAtWord(state, iparm, popLong());    break;
+                    default:        shouldNotReachHere();
+                }
+            } else {
+                pushAddress(klass);
+                pushInt(iparm);
+                switch ($t) {
+                    case OOP:       call(java_lang_VM_do_putStaticOop);        break;
+                    case INT:
+                    case FLOAT:     call(java_lang_VM_do_putStaticInt);        break;
+                    case LONG:
+                    case DOUBLE:    call(java_lang_VM_do_putStaticLong);       break;
+                    default:        shouldNotReachHere();
+                }
+            }
+        }
+
+        /**
+         * class_putstatic.
+         *
+         * <p>
+         * Java Stack: VALUE -> _
+         * <p>
+         *
+         * @param t the operation data type
+         */
+/*MAC*/ void do_class_putstatic(Type $t) {
+            pushAddress(getCP());
+            do_putstatic($t);
+        }
+
+
+        /*-----------------------------------------------------------------------*\
+         *                         Instance field access                         *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * Check for a null pointer.
+         *
+         * @param oop the pointer
+         * @param checkSlots true if slot checking should be performed
+         */
+/*DEF*/ void nullCheckPrim(Address $oop, boolean $checkSlots) {
+            if ($checkSlots) {
+                checkReferenceSlots();
+            }
+            if ($oop == 0) {
+/*if[MACROIZE]*/
+                goto throw_nullCheck;
+/*else[MACROIZE]*/
+//              resetStackPointerIfRevParms();
+//              call(java_lang_VM_do_nullPointerException);
+//              nextbytecode();
+/*end[MACROIZE]*/
+            }
+        }
+
+        /**
+         * Check for a null pointer.
+         *
+         * @param oop the pointer
+         */
+/*DEF*/ void nullCheck(Address $oop) {
+            nullCheckPrim($oop, true);
+        }
+
+        /**
+         * Check for a null pointer or an array bounds overflow.
+         *
+         * @param oop the array
+         * @param index the index to check
+         */
+/*DEF*/ void boundsCheck(Address $oop, int $index) {
+            int lth;
+            nullCheck($oop);
+            lth = (int)getArrayLength($oop);
+            if ($index < 0 || $index >= lth) {
+/*if[MACROIZE]*/
+                goto throw_boundsCheck;
+/*else[MACROIZE]*/
+//              resetStackPointerIfRevParms();
+//              call(java_lang_VM_do_arrayIndexOutOfBoundsException);
+//              nextbytecode();
+/*end[MACROIZE]*/
+            }
+        }
+
+        /**
+         * getfield.
+         *
+         * <p>
+         * Java Stack: ..., OOP -> ..., VALUE
+         * <p>
+         *
+         * @param t the operation data type
+         * @param checkSlots true if slot checking should be performed
+         */
+/*MAC*/ void getfield(Type $t, boolean $checkSlots) {
+            Address oop = popAddress();
+            nullCheckPrim(oop, $checkSlots);
+            if (TYPEMAP) {
+                if (getMutationType() == AddressType_REF) {
+                    pushAddress(getObject(oop, iparm));
+                    nextbytecode();
+                } else if (getMutationType() == AddressType_UWORD) {
+                    pushWord(getUWord(oop, iparm));
+                    nextbytecode();
+                }
+            }
+            switch ($t) {
+                case BYTE: {
+                    pushInt(getByte(oop, iparm));
+                    break;
+                }
+                case SHORT: {
+                    pushInt(getShort(oop, iparm));
+                    break;
+                }
+                case USHORT: {
+                    pushInt(getUShort(oop, iparm));
+                    break;
+                }
+                case INT:
+                case FLOAT: {
+                    pushInt(getInt(oop, iparm));
+                    break;
+                }
+                case LONG:
+                case DOUBLE: {
+                    pushLong(getLongAtWord(oop, iparm));
+                    break;
+                }
+                case OOP: {
+                    pushAddress(getObject(oop, iparm));
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * getfield.
+         *
+         * <p>
+         * Java Stack: ..., OOP -> ..., VALUE
+         * <p>
+         *
+         * @param t the operation data type
+         */
+/*MAC*/ void do_getfield(Type $t) {
+            getfield($t, true);
+        }
+
+        /**
+         * this_getfield.
+         *
+         * <p>
+         * Java Stack: ... -> ..., VALUE
+         * <p>
+         *
+         * @param t the operation data type
+         */
+/*MAC*/ void do_this_getfield(Type $t) {
+            pushAsType(getParmTyped(0, AddressType_REF), AddressType_REF);
+            getfield($t, false);
+        }
+
+        /**
+         * putfield.
+         *
+         * <p>
+         * Java Stack: ..., OOP, VALUE -> ...
+         * <p>
+         *
+         * @param t the operation data type
+         * @param checkSlots true if slot checking should be performed
+         */
+/*MAC*/ void putfield(Type $t, boolean $checkSlots) {
+            if (TYPEMAP) {
+                if (getMutationType() == AddressType_REF) {
+                    Address value = popAddress();
+                    Address oop = popAddress();
+                    nullCheckPrim(oop, $checkSlots);
+                    setObject(oop, iparm, value);
+                    nextbytecode();
+                } else if (getMutationType() == AddressType_UWORD) {
+                    UWord value = popWord();
+                    Address oop = popAddress();
+                    nullCheckPrim(oop, $checkSlots);
+                    setUWord(oop, iparm, value);
+                    nextbytecode();
+                }
+            }
+            if ($t == LONG || $t == DOUBLE) {
+                jlong value = popLong();
+                Address oop = popAddress();
+                nullCheckPrim(oop, $checkSlots);
+                setLongAtWord(oop, iparm, value);
+            } else if ($t == OOP) {
+                Address value = popAddress();
+                Address oop = popAddress();
+                nullCheckPrim(oop, $checkSlots);
+                setObjectAndUpdateWriteBarrier(oop, iparm, value);
+            } else {
+                int value = popInt();
+                Address oop = popAddress();
+                nullCheckPrim(oop, $checkSlots);
+                switch ($t) {
+                    case BYTE: {
+                        setByte(oop, iparm, value);
+                        break;
+                    }
+                    case SHORT: {
+                        setShort(oop, iparm, value);
+                        break;
+                    }
+                    case INT:
+                    case FLOAT: {
+                        setInt(oop, iparm, value);
+                        break;
+                    }
+                    default: shouldNotReachHere();
+                }
+            }
+        }
+
+        /**
+         * putfield.
+         *
+         * <p>
+         * Java Stack: ..., OOP, VALUE -> ...
+         * <p>
+         *
+         * @param t the operation data type
+         */
+/*MAC*/ void do_putfield(Type $t) {
+            putfield($t, true);
+        }
+
+        /**
+         * this_putfield.
+         *
+         * <p>
+         * Java Stack: ..., VALUE -> ...
+         * <p>
+         *
+         * @param t the operation data type
+         */
+/*MAC*/ void do_this_putfield(Type $t) {
+            pushAsType(getParmTyped(0, AddressType_REF), AddressType_REF);
+            putfield($t, false);
+        }
+
+        /*-----------------------------------------------------------------------*\
+         *                           Array field access                          *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * aload.
+         *
+         * <p>
+         * Java Stack: ..., OOP, INT -> ..., VALUE
+         * <p>
+         *
+         * @param t the operation data type
+         */
+/*MAC*/ void do_aload(Type $t) {
+            int index   = popInt();
+            Address oop = popAddress();
+            boundsCheck(oop, index);
+            if (TYPEMAP) {
+                if (getMutationType() == AddressType_REF) {
+                    pushAddress(getObject(oop, index));
+                    nextbytecode();
+                }
+                if (getMutationType() == AddressType_UWORD) {
+                    pushWord(getUWord(oop, index));
+                    nextbytecode();
+                }
+            }
+            switch ($t) {
+                case BYTE: {
+                    pushInt(getByte(oop, index));
+                    break;
+                }
+                case SHORT: {
+                    pushInt(getShort(oop, index));
+                    break;
+                }
+                case USHORT: {
+                    pushInt(getUShort(oop, index));
+                    break;
+                }
+                case INT:
+                case FLOAT:  {
+                    pushInt(getInt(oop, index));
+                    break;
+                }
+                case OOP: {
+                    pushAddress(getObject(oop, index));
+                    break;
+                }
+                case LONG:
+                case DOUBLE: {
+                    pushLong(getLong(oop, index));
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * astore.
+         *
+         * <p>
+         * Java Stack: ..., OOP, INT, VALUE -> ...
+         * <p>
+         * Java Stack:      OOP, INT, VALUE -> _ (when type = OOP)
+         * <p>
+         *
+         * @param t the operation data type
+         */
+/*MAC*/ void do_astore(Type $t) {
+            if (TYPEMAP) {
+                if (getMutationType() == AddressType_REF) {
+                    Address value = popAddress();
+                    int index   = popInt();
+                    Address oop = popAddress();
+                    boundsCheck(oop, index);
+                    setObject(oop, index, value);
+                    nextbytecode();
+                } else if (getMutationType() == AddressType_UWORD) {
+                    UWord value = popWord();
+                    int index   = popInt();
+                    Address oop = popAddress();
+                    boundsCheck(oop, index);
+                    setUWord(oop, index, value);
+                    nextbytecode();
+                }
+            }
+            if ($t == LONG || $t == DOUBLE) {
+                jlong value = popLong();
+                int index   = popInt();
+                Address oop = popAddress();
+                boundsCheck(oop, index);
+                setLong(oop, index, value);
+            } else if ($t == OOP) {
+                Address value  = popAddress();
+                int index   = popInt();
+                Address oop = popAddress();
+                boundsCheck(oop, index);
+                if (value != 0) {
+                    pushAddress(oop);
+                    pushInt(index);
+                    pushAddress(value);
+                    call(java_lang_VM_do_arrayOopStore);
+                } else {
+                    setObject(oop, index, 0);
+                }
+            } else {
+                int value   = popInt();
+                int index   = popInt();
+                Address oop = popAddress();
+                boundsCheck(oop, index);
+                switch ($t) {
+                    case BYTE: {
+                        setByte(oop, index, value);
+                        break;
+                    }
+                    case SHORT: {
+                        setShort(oop, index, value);
+                        break;
+                    }
+                    case INT:
+                    case FLOAT: {
+                        setInt(oop, index, value);
+                        break;
+                    }
+                    default: shouldNotReachHere();
+                }
+            }
+        }
+
+
+        /*-----------------------------------------------------------------------*\
+         *                           Invoke instructions                         *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * invokestatic.
+         *
+         * Java Stack: [[... arg2], arg1], CLASS -> [VALUE]
+         * <p>
+         *
+         * @param t the return type
+         */
+/*MAC*/ void do_invokestatic(Type $t) {
+            Address cls = popAddress();
+            call(getStaticMethod(cls, iparm));
+        }
+
+        /**
+         * invokesuper.
+         *
+         * Java Stack: [[... arg2], arg1], OOP, CLASS -> [VALUE]
+         * <p>
+         *
+         * @param t the return type
+         */
+/*MAC*/ void do_invokesuper(Type $t) {
+            Address cls = popAddress();
+            Address obj;
+            resetStackPointerIfNotRevParms();
+            obj = (Address)peek();
+            nullCheck(obj);
+            callNoReset(getVirtualMethod(cls, iparm));
+        }
+
+        /**
+         * invokevirtual.
+         *
+         * Java Stack: [[... arg2], arg1], OOP -> [VALUE]
+         * <p>
+         *
+         * @param t the return type
+         */
+/*MAC*/ void do_invokevirtual(Type $t) {
+            Address obj;
+            Address cls;
+            resetStackPointerIfNotRevParms();
+            obj = (Address)peek();
+            nullCheck(obj);
+            cls = getClassOrAssociation(obj);
+            callNoReset(getVirtualMethod(cls, iparm));
+        }
+
+        /**
+         * findslot.
+         *
+         * <p>
+         * Java Stack: OOP, CLASS -> VSLOT
+         * <p>
+         */
+/*MAC*/ void do_findslot() {
+            Address cls = popAddress();
+            Address oop = popAddress();
+            nullCheck(oop);
+            pushAddress(oop);
+            pushAddress(cls);
+            pushInt(iparm);
+            call(java_lang_VM_do_findSlot);
+        }
+
+        /**
+         * invokeslot.
+         *
+         * Java Stack: [[... arg2], arg1], OOP, VSLOT -> [VALUE] (Stack grows down)
+         *
+         * @param t the return type
+         */
+/*MAC*/ void do_invokeslot(Type $t) {
+            iparm = popInt();
+            do_invokevirtual($t);
+        }
+
+
+/*INL*/ void incExtends(int $slots) {
+#ifdef TRACE
+            totol_extends++;
+            totol_slots += $slots;
+#endif
+        }
+
+
+        /**
+         * Extend the activation record.
+         *
+         * <p>
+         * Java Stack: _ -> _
+         * <p>
+         */
+/*MAC*/ void extend(Address $mp, int $slotsToClear) {
+            Address mp = $mp;
+            int nlocals, nstack;
+            assume(java_lang_VM_extendsEnabled);
+            downPushAddress(fp);                        /* Save caller's frame pointer. */
+            downPushAddress(mp);                        /* Method address.              */
+            fp = sp;                                    /* Setup new frame pointer.     */
+            assume(getMP() == mp);
+            nlocals = getLocalCount(mp);
+            nstack  = getStackCount(mp);
+            assume($slotsToClear < nlocals);
+            incExtends($slotsToClear);
+/*if[TRUST_SLOT_CLEARING]*/
+/*else[TRUST_SLOT_CLEARING]*/
+//          $slotsToClear = nlocals - 1;
+/*end[TRUST_SLOT_CLEARING]*/
+            if ((fp - nlocals - nstack) > (sl + FP_FIXED_FRAME_SIZE)) {
+                UWordAddress oldsp = sp;
+                int delta = nlocals;
+/*if[REVERSE_PARAMETERS]*/
+/*else[REVERSE_PARAMETERS]*/
+//              delta += nstack;
+/*end[REVERSE_PARAMETERS]*/
+                resetStackPointerFromDelta(delta);
+                if (CHECK_SLOT_CLEARING) {
+                    int slotsToZap = nlocals - 1;
+                    UWordAddress oldsp2 = oldsp;
+                    while (slotsToZap > 0) {
+                        setUWord(--oldsp2, 0, 0xDEAFBEEF);            /* Write a bad value */
+                        setType(oldsp2, AddressType_ANY, sizeof(UWord));
+                        slotsToZap = slotsToZap - 1;
+                    }
+                }
+                while ($slotsToClear > 0) {
+                    setUWord(--oldsp, 0, 0);            /* zero local variables that need clearing */
+                    setType(oldsp, AddressType_ANY, sizeof(UWord));
+                    $slotsToClear = $slotsToClear - 1;
+                }
+            } else {
+                if (java_lang_GC_traceFlags != 0) {
+                    fprintf(stderr, format(
+                                            "*** Extending stack *** (stack size=%d, remaining stack=%d, bcount=%L)\n"),
+                                            getArrayLength(ss),
+                                            sp - sl,
+                                            getBranchCount()
+                                          );
+                }
+                if (usingServiceStack()) {
+                    fatalVMError("cannot extend service stack");
+                }
+                threadSwitchFor(java_lang_ServiceOperation_EXTEND);
+            }
+        }
+
+        /**
+         * Check that there are no 0xDEAFBEEF words in the local variables.
+         */
+/*MAC*/ void checkReferenceSlots() {
+            if (CHECK_SLOT_CLEARING && fp != null) {
+                int i;
+                Address mp     = getMP();
+                int nparms     = getParmCount(mp);
+                int nlocals    = getLocalCount(mp);
+                int vars       = nlocals + nparms;
+                int oopmapLth  = (vars+7)/8;
+                int oopMapOff  = getOffsetToLastMinfoByte(mp) - oopmapLth;
+                int bitOffset  = (nparms - 1) % 8;
+                int byteOffset = (nparms - 1) / 8;
+                for (i = 0 ; i < nlocals ; i++) {
+                    int bite;
+                    boolean isOop;
+                    bitOffset++;
+                    if (bitOffset == 8) {
+                        bitOffset = 0;
+                        byteOffset++;
+                    }
+                    bite  = getByte(mp, oopMapOff + byteOffset);
+                    isOop = ((bite >> bitOffset) & 1) != 0;
+                    if (isOop) {
+                        UWord wd = peekLocal(i);
+                        if (wd == (UWord)0xDEAFBEEF) {
+                            fatalVMError("0xDEAFBEEF found");
+                        }
+                    }
+                }
+            }
+        }
+
+        /**
+         * Extend the activation record.
+         *
+         * <p>
+         * Java Stack: _ -> _
+         * <p>
+         */
+/*MAC*/ void do_extend() {
+            Address mp = Address_sub(ip, 2);
+            extend(mp, iparm);
+        }
+
+        /**
+         * Extend the activation record.
+         *
+         * <p>
+         * Java Stack: _ -> _
+         * <p>
+         */
+/*MAC*/ void do_extend0() {
+            Address mp = Address_sub(ip, 1);
+            extend(mp, 0);
+        }
+
+        /**
+         * Return from a method.
+         *
+         * <p>
+         * Java Stack: [VALUE] -> _
+         * <p>
+         *
+         * @param t type of data to return
+         */
+/*MAC*/ void do_return(Type $t) {
+            if (TYPEMAP) {
+                if (getMutationType() == AddressType_REF) {
+                    Address res;
+                    ip = (ByteAddress)getObject(fp, FP_returnIP);
+                    res = popAddress();
+                    fp = (UWordAddress)getObject(fp, FP_returnFP);
+                    resetStackPointer();
+                    pushAddress(res);
+                    nextbytecode();
+                }
+                if (getMutationType() == AddressType_UWORD) {
+                    UWord res;
+                    ip = (ByteAddress)getObject(fp, FP_returnIP);
+                    res = popWord();
+                    fp = (UWordAddress)getObject(fp, FP_returnFP);
+                    resetStackPointer();
+                    pushWord(res);
+                    nextbytecode();
+                }
+            }
+            ip = (ByteAddress)getObject(fp, FP_returnIP);
+            assume(ip != null);
+            if ($t == LONG || $t == DOUBLE) {
+                jlong res = popLong();
+                fp = (UWordAddress)getObject(fp, FP_returnFP);
+                resetStackPointer();
+                pushLong(res);
+            } else if ($t == OOP) {
+                Address res = popAddress();
+                fp = (UWordAddress)getObject(fp, FP_returnFP);
+                resetStackPointer();
+                pushAddress(res);
+            } else if ($t != VOID) {
+                int res = popInt();
+                fp = (UWordAddress)getObject(fp, FP_returnFP);
+                resetStackPointer();
+                pushInt(res);
+            } else {
+                fp = (UWordAddress)getObject(fp, FP_returnFP);
+                resetStackPointer();
+            }
+        }
+
+        /**
+         * Pops one word from the Java stack.
+         *
+         * <p>
+         * Java Stack: ..., INT -> ...
+         * <p>
+         */
+/*MAC*/ void do_pop(int $n) {
+            popAsType(AddressType_ANY);
+            if (!SQUAWK_64 && $n == 2) {
+                popAsType(AddressType_ANY);
+            }
+        }
+
+        /**
+         * invokenativemain.
+         */
+/*MAC*/ void invokenativemain() {
+            checkReferenceSlots();
+            switch(iparm) {
+                case java_lang_Offset_eq:
+                case java_lang_UWord_eq: {
+                    UWord value2 = popWord();
+                    UWord value1 = popWord();
+                    pushInt(value1 == value2);
+                    break;
+                }
+
+                case java_lang_Offset_ne:
+                case java_lang_UWord_ne: {
+                    UWord value2 = popWord();
+                    UWord value1 = popWord();
+                    pushInt(value1 != value2);
+                    break;
+                }
+
+                case java_lang_Offset_add: {
+                    int delta = popInt();
+                    Offset offset = (Offset)popWord();
+                    pushWord(offset + delta);
+                    break;
+                }
+
+                case java_lang_Offset_sub: {
+                    int delta = popInt();
+                    Offset offset = (Offset)popWord();
+                    pushWord(offset - delta);
+                    break;
+                }
+
+                case java_lang_Offset_bytesToWords: {
+                    Offset offset = (Offset)popWord();
+                    assume((offset % HDR_BYTES_PER_WORD) == 0);
+                    pushWord(offset >> HDR_LOG2_BYTES_PER_WORD);
+                    break;
+                }
+
+                case java_lang_Offset_wordsToBytes: {
+                    Offset offset = (Offset)popWord();
+                    pushWord(offset << HDR_LOG2_BYTES_PER_WORD);
+                    break;
+                }
+
+                case java_lang_Address_fromPrimitive: {
+                    if (TYPEMAP) {
+                        Address value = (Address)(SQUAWK_64 ? popLong() : popInt());
+                        pushAddress(value);
+                    }
+                    break;
+                }
+
+                case java_lang_Offset_fromPrimitive:
+                case java_lang_UWord_fromPrimitive: {
+                    if (TYPEMAP) {
+                        UWord value = SQUAWK_64 ? popLong() : popInt();
+                        pushWord(value);
+                    }
+                    break;
+                }
+
+                case java_lang_Offset_toPrimitive:
+                case java_lang_UWord_toPrimitive: {
+                    if (TYPEMAP) {
+                        UWord value = popWord();
+                        if (SQUAWK_64) {
+                            /* this catches a (false) assumption that a given offset won't loose its sign or magnitude when converted to a long */
+                            if (ASSUME && (jlong)value != value) {
+                                fatalVMError("cast to long changes sign and/or magnitude");
+                            }
+                            pushLong(value);
+                        } else {
+                            /* this catches a (false) assumption that a given offset won't loose its sign or magnitude when converted to an int */
+                            if (ASSUME && (int)value != value) {
+                                fatalVMError("cast to int changes sign and/or magnitude");
+                            }
+                            pushInt(value);
+                        }
+                    }
+                    break;
+                }
+
+                case java_lang_Offset_toInt:
+                case java_lang_UWord_toInt: {
+                    UWord value = popWord();
+                    /* this catches a (false) assumption that a given offset won't loose its sign or magnitude when converted to an int */
+                    if (ASSUME && (int)value != value) {
+                        fatalVMError("cast to int changes sign and/or magnitude");
+                    }
+                    pushInt((int)value);
+                    break;
+                }
+
+                case java_lang_UWord_toOffset:
+                case java_lang_Offset_toUWord: {
+                    break;
+                }
+
+                case java_lang_UWord_max: {
+                    pushWord(WORD_MAX);
+                    break;
+                }
+
+                case java_lang_UWord_zero: {
+                    pushWord(0);
+                    break;
+                }
+
+                case java_lang_UWord_and: {
+                    UWord value2 = popWord();
+                    UWord value1 = popWord();
+                    pushWord(value1 & value2);
+                    break;
+                }
+
+                case java_lang_UWord_or: {
+                    UWord value2 = popWord();
+                    UWord value1 = popWord();
+                    pushWord(value1 | value2);
+                    break;
+                }
+
+                case java_lang_UWord_loeq: {
+                    UWord value2 = popWord();
+                    UWord value1 = popWord();
+                    pushInt(loeq(value1, value2));
+                    break;
+                }
+
+                case java_lang_UWord_hieq: {
+                    UWord value2 = popWord();
+                    UWord value1 = popWord();
+                    pushInt(hieq(value1, value2));
+                    break;
+                }
+
+                case java_lang_UWord_hi: {
+                    UWord value2 = popWord();
+                    UWord value1 = popWord();
+                    pushInt(hi(value1, value2));
+                    break;
+                }
+
+                case java_lang_UWord_lo: {
+                    UWord value2 = popWord();
+                    UWord value1 = popWord();
+                    pushInt(lo(value1, value2));
+                    break;
+                }
+
+                case java_lang_Offset_le: {
+                    UWord value2 = popWord();
+                    UWord value1 = popWord();
+                    pushInt(le(value1, value2));
+                    break;
+                }
+
+                case java_lang_Offset_ge: {
+                    UWord value2 = popWord();
+                    UWord value1 = popWord();
+                    pushInt(ge(value1, value2));
+                    break;
+                }
+
+                case java_lang_Offset_gt: {
+                    UWord value2 = popWord();
+                    UWord value1 = popWord();
+                    pushInt(gt(value1, value2));
+                    break;
+                }
+
+                case java_lang_Offset_lt: {
+                    UWord value2 = popWord();
+                    UWord value1 = popWord();
+                    pushInt(lt(value1, value2));
+                    break;
+                }
+
+                case java_lang_UWord_isZero: {
+                    UWord value = popWord();
+                    pushInt(value == 0);
+                    break;
+                }
+
+                case java_lang_UWord_isMax: {
+                    UWord value = popWord();
+                    pushInt(value == WORD_MAX);
+                    break;
+                }
+
+                case java_lang_Unsafe_getByte: {
+                    int     off = popInt();
+                    Address base = popAddress();
+                    pushInt(getByte(base, off));
+                    break;
+                }
+
+                case java_lang_Unsafe_getAsByte: {
+                    int     off = popInt();
+                    Address base = popAddress();
+                    pushInt(getByteTyped(base, off, AddressType_ANY));
+                    break;
+                }
+
+                case java_lang_Unsafe_setByte: {
+                    int     val = popInt();
+                    int     off = popInt();
+                    Address base = popAddress();
+                    setByte(base, off, val);
+                    break;
+                }
+
+                case java_lang_Unsafe_getShort: {
+                    int     off = popInt();
+                    Address base = popAddress();
+                    pushInt(getShort(base, off));
+                    break;
+                }
+
+                case java_lang_Unsafe_getChar: {
+                    int     off = popInt();
+                    Address base = popAddress();
+                    pushInt(getUShort(base, off));
+                    break;
+                }
+
+                case java_lang_Unsafe_charAt: {
+                    int     off = popInt();
+                    Address str = popAddress();
+                    Address cls = getClass(str);
+                    if (java_lang_Class_classID(cls) == java_lang_StringOfBytes) {
+                        pushInt(getByte(str, off) & 0xFF);
+                    } else {
+                        pushInt(getUShort(str, off));
+                    }
+                    break;
+                }
+
+                case java_lang_Unsafe_setShort:
+                case java_lang_Unsafe_setChar: {
+                    int     val = popInt();
+                    int     off = popInt();
+                    Address base = popAddress();
+                    setShort(base,  off, val);
+                    break;
+                }
+
+                case java_lang_Unsafe_getObject: {
+                    int     off = popInt();
+                    Address base = popAddress();
+                    pushAddress(getObject(base, off));
+                    break;
+                }
+
+                case java_lang_Unsafe_getAsUWord: {
+                    int     off = popInt();
+                    Address base = popAddress();
+                    pushWord(getUWordTyped(base, off, AddressType_ANY));
+                    break;
+                }
+
+                case java_lang_Unsafe_getUWord: {
+                    int     off = popInt();
+                    Address base = popAddress();
+                    pushWord(getUWord(base, off));
+                    break;
+                }
+
+                case java_lang_Unsafe_getInt: {
+                    int     off = popInt();
+                    Address base = popAddress();
+                    pushInt(getInt(base, off));
+                    break;
+                }
+
+                case java_lang_Unsafe_setAddress: {
+                    Address val = popAddress();
+                    int     off = popInt();
+                    Address base = popAddress();
+                    setObject(base,  off, val);
+                    break;
+                }
+
+                case java_lang_Unsafe_setObject: {
+                    Address val = popAddress();
+                    int     off = popInt();
+                    Address base = popAddress();
+                    assume(!java_lang_GC_collecting);
+                    setObjectAndUpdateWriteBarrier(base,  off, val);
+                    break;
+                }
+
+                case java_lang_Unsafe_setInt: {
+                    int     val = popInt();
+                    int     off = popInt();
+                    Address base = popAddress();
+                    setInt(base,  off, val);
+                    break;
+                }
+
+                case java_lang_Unsafe_setUWord: {
+                    UWord    val = popWord();
+                    int     off = popInt();
+                    Address base = popAddress();
+                    setUWord(base,  off, val);
+                    break;
+                }
+
+                case java_lang_Unsafe_getLongAtWord: {
+                    int     off = popInt();
+                    Address base = popAddress();
+                    pushLong(getLongAtWord(base, off));
+                    break;
+                }
+
+                case java_lang_Unsafe_setLongAtWord: {
+                    jlong   val = popLong();
+                    int     off = popInt();
+                    Address base = popAddress();
+                    setLongAtWord(base,  off, val);
+                    break;
+                }
+
+                case java_lang_Address_add: {
+                    int offset = popInt();
+                    Address addr = popAddress();
+                    pushAddress(Address_add(addr, offset));
+                    break;
+                }
+
+                case java_lang_Address_addOffset: {
+                    Offset offset = popWord();
+                    Address addr = popAddress();
+                    pushAddress(Address_add(addr, offset));
+                    break;
+                }
+
+                case java_lang_Address_sub: {
+                    int offset = popInt();
+                    Address addr = popAddress();
+                    pushAddress(Address_sub(addr, offset));
+                    break;
+                }
+
+                case java_lang_Address_subOffset: {
+                    Offset offset = popWord();
+                    Address addr = popAddress();
+                    pushAddress(Address_sub(addr, offset));
+                    break;
+                }
+
+                case java_lang_Address_and: {
+                    UWord word = popWord();
+                    UWord addr = (UWord)popAddress();
+                    pushAddress((Address)(addr & word));
+                    break;
+                }
+
+                case java_lang_Address_or: {
+                    UWord word = popWord();
+                    UWord addr = (UWord)popAddress();
+                    pushAddress((Address)(addr | word));
+                    break;
+                }
+
+                case java_lang_Address_diff: {
+                    Address addr2 = popAddress();
+                    Address addr1 = popAddress();
+                    pushWord(Address_diff(addr1, addr2));
+                    break;
+                }
+
+                case java_lang_Address_roundUp: {
+                    int alignment = popInt();
+                    UWord addr = (UWord)popAddress();
+                    pushAddress((Address)roundUp(addr, alignment));
+                    break;
+                }
+
+                case java_lang_Address_roundUpToWord: {
+                    UWord addr = (UWord)popAddress();
+                    pushAddress((Address)roundUpToWord(addr));
+                    break;
+                }
+
+                case java_lang_Address_roundDown: {
+                    int alignment = popInt();
+                    UWord addr = (UWord)popAddress();
+                    pushAddress((Address)roundDown(addr, alignment));
+                    break;
+                }
+
+                case java_lang_Address_roundDownToWord: {
+                    UWord addr = (UWord)popAddress();
+                    pushAddress((Address)roundDownToWord(addr));
+                    break;
+                }
+
+                case java_lang_Address_isZero: {
+                    Address addr = popAddress();
+                    pushInt(addr == 0);
+                    break;
+                }
+
+                case java_lang_Address_isMax: {
+                    Address addr = popAddress();
+                    pushInt(addr == ADDRESS_MAX);
+                    break;
+                }
+
+                case java_lang_Address_zero: {
+                    pushAddress(0);
+                    break;
+                }
+
+                case java_lang_Address_max: {
+                    pushAddress(ADDRESS_MAX);
+                    break;
+                }
+
+                case java_lang_Address_toUWord: {
+                    if (TYPEMAP) {
+                        Address value = popAddress();
+                        pushWord((UWord)value);
+                    }
+                    break;
+                }
+
+                case java_lang_Address_toObject:
+                case java_lang_Address_fromObject: {
+                    break;
+                }
+
+                case java_lang_Address_eq: {
+                    Address addr2 = popAddress();
+                    Address addr1 = popAddress();
+                    pushInt(addr1 == addr2);
+                    break;
+                }
+
+                case java_lang_Address_ne: {
+                    Address addr2 = popAddress();
+                    Address addr1 = popAddress();
+                    pushInt(addr1 != addr2);
+                    break;
+                }
+
+                case java_lang_Address_lo: {
+                    Address addr2 = popAddress();
+                    Address addr1 = popAddress();
+                    pushInt(lo(addr1, addr2));
+                    break;
+                }
+
+                case java_lang_Address_loeq: {
+                    Address addr2 = popAddress();
+                    Address addr1 = popAddress();
+                    pushInt(loeq(addr1, addr2));
+                    break;
+                }
+
+                case java_lang_Address_hi: {
+                    Address addr2 = popAddress();
+                    Address addr1 = popAddress();
+                    pushInt(hi(addr1, addr2));
+                    break;
+                }
+
+                case java_lang_Address_hieq: {
+                    Address addr2 = popAddress();
+                    Address addr1 = popAddress();
+                    pushInt(hieq(addr1, addr2));
+                    break;
+                }
+
+                case java_lang_Unsafe_setType: {
+                    int size = popInt();
+                    char type = (char)popInt();
+                    Address ea = popAddress();
+                    setType(ea, type, size);
+                    break;
+                }
+
+                case java_lang_Unsafe_getType: {
+                    Address ea = popAddress();
+                    pushInt(getType(ea));
+                    break;
+                }
+
+                case java_lang_Unsafe_copyTypes: {
+                    int length = popInt();
+                    Address dst = popAddress();
+                    Address src = popAddress();
+                    copyTypes(src, dst, length);
+                    break;
+                }
+
+                case java_lang_VM_allocate: {
+                    int     alth   = popInt();
+                    Address klass  = popAddress();
+                    int     size   = popInt();
+                    Address res    = allocate(size, klass, alth);
+                    pushAddress(res);
+                    break;
+                }
+
+                case java_lang_VM_zeroWords: {
+                    UWordAddress end   = (UWordAddress)popAddress();
+                    UWordAddress start = (UWordAddress)popAddress();
+                    zeroWords(start, end);
+                    break;
+                }
+
+                case java_lang_VM_deadbeef: {
+                    UWordAddress end   = (UWordAddress)popAddress();
+                    UWordAddress start = (UWordAddress)popAddress();
+                    if (ASSUME || TYPEMAP) {
+                        while (start < end) {
+                            if (ASSUME) {
+                                *start = DEADBEEF;
+                            }
+                            setType(start, AddressType_UNDEFINED, HDR_BYTES_PER_WORD);
+                            start++;
+                        }
+                    }
+                    break;
+                }
+
+                case java_lang_VM_getFP: {
+                    pushAddress(fp);
+                    break;
+                }
+
+                case java_lang_VM_getMP: {
+                    Address afp = popAddress();
+                    pushAddress(getObject(afp, FP_method));
+                    break;
+                }
+
+                case java_lang_VM_getPreviousFP: {
+                    Address afp = popAddress();
+                    pushAddress(getObject(afp, FP_returnFP));
+                    break;
+                }
+
+                case java_lang_VM_getPreviousIP: {
+                    Address afp = popAddress();
+                    pushAddress(getObject(afp, FP_returnIP));
+                    break;
+                }
+
+                case java_lang_VM_setPreviousFP: {
+                    Address pfp = popAddress();
+                    Address afp = popAddress();
+                    setObject(afp, FP_returnFP, pfp);
+                    break;
+                }
+
+                case java_lang_VM_setPreviousIP: {
+                    Address pip = popAddress();
+                    Address afp = popAddress();
+                    setObject(afp, FP_returnIP, pip);
+                    break;
+                }
+
+                case java_lang_VM_getGlobalIntCount: {
+                    pushInt(GLOBAL_INT_COUNT);
+                    break;
+                }
+
+                case java_lang_VM_getGlobalAddrCount: {
+                    pushInt(GLOBAL_ADDR_COUNT);
+                    break;
+                }
+
+                case java_lang_VM_getGlobalOopCount: {
+                    pushInt(GLOBAL_OOP_COUNT);
+                    break;
+                }
+
+                case java_lang_VM_getGlobalInt: {
+                    int index = popInt();
+                    assume(index < GLOBAL_INT_COUNT);
+                    pushInt(Ints[index]);
+                    break;
+                }
+
+                case java_lang_VM_getGlobalAddr: {
+                    int index = popInt();
+                    assume(index < GLOBAL_ADDR_COUNT);
+                    pushAddress(Addrs[index]);
+                    break;
+                }
+
+                case java_lang_VM_getGlobalOop: {
+                    int index = popInt();
+                    assume(index < GLOBAL_OOP_COUNT);
+                    pushAddress(Oops[index]);
+                    break;
+                }
+
+                case java_lang_VM_getGlobalOopTable: {
+                    pushAddress(Oops);
+                    break;
+                }
+
+                case java_lang_VM_setGlobalInt: {
+                    int index  = popInt();
+                    int value = popInt();
+                    assume(index < GLOBAL_INT_COUNT);
+                    Ints[index] = (int)value;
+                    break;
+                }
+
+                case java_lang_VM_setGlobalAddr: {
+                    int index  = popInt();
+                    Address value = popAddress();
+                    assume(index < GLOBAL_ADDR_COUNT);
+                    Addrs[index] = value;
+                    break;
+                }
+
+                case java_lang_VM_setGlobalOop: {
+                    int index  = popInt();
+                    Address value = popAddress();
+                    assume(index < GLOBAL_OOP_COUNT);
+                    Oops[index] = value;
+                    break;
+                }
+
+                case java_lang_VM_lcmp: {
+                    call(java_lang_VM_do_lcmp);
+                    break;
+                }
+
+                case java_lang_VM_callStaticNoParm: {
+                    int     slot = popInt();
+                    Address cls  = popAddress();
+                    call(getStaticMethod(cls, slot));
+                    break;
+                }
+
+                case java_lang_VM_callStaticOneParm: {
+                    Address parm = popAddress();
+                    int     slot = popInt();
+                    Address cls  = popAddress();
+                    pushAddress(parm);
+                    call(getStaticMethod(cls, slot));
+                    break;
+                }
+
+                case java_lang_VM_hashcode:
+                case java_lang_VM_asThread:
+                case java_lang_VM_asKlass: {
+                    break;
+                }
+
+                case java_lang_VM_fatalVMError: {
+                    fatalVMError("java_lang_VM_fatalVMError");
+                    break;
+                }
+
+                case java_lang_VM_getBranchCount: {
+                    pushLong(getBranchCount());
+                    break;
+                }
+
+                case java_lang_VM_threadSwitch: {
+                    threadSwitch(java_lang_ServiceOperation_NONE);
+                    break;
+                }
+
+                case java_lang_VM_executeCIO: {
+                    Address o2  = popAddress();
+                    Address o1  = popAddress();
+                    int i6      = popInt();
+                    int i5      = popInt();
+                    int i4      = popInt();
+                    int i3      = popInt();
+                    int i2      = popInt();
+                    int i1      = popInt();
+                    int channel = popInt();
+                    int op      = popInt();
+                    int context = popInt();
+                    executeCIO(context, op, channel, i1, i2, i3, i4, i5, i6, o1, o2);
+                    break;
+                }
+
+                case java_lang_VM_executeCOG: {
+                    Address o2  = popAddress();
+                    Address o1  = popAddress();
+                    int i1      = popInt();
+                    java_lang_ServiceOperation_i1 = i1;
+                    java_lang_ServiceOperation_o1 = o1;
+                    java_lang_ServiceOperation_o2 = o2;
+                    threadSwitchFor(java_lang_ServiceOperation_COPY_OBJECT_GRAPH);
+                    break;
+                }
+
+                case java_lang_VM_executeGC: {
+                    threadSwitchFor(java_lang_ServiceOperation_GARBAGE_COLLECT);
+                    break;
+                }
+
+                case java_lang_VM_serviceResult: {
+                    int res = java_lang_ServiceOperation_result;
+                    java_lang_ServiceOperation_result = 0xDEADBEEF;
+                    pushInt(res);
+                    break;
+                }
+
+                case java_lang_ServiceOperation_cioExecute: {
+                    void cioExecute(void);
+                    cioExecute();
+                    break;
+                }
+
+                case java_lang_VM_isBigEndian: {
+                    pushInt(PLATFORM_BIG_ENDIAN);
+                    break;
+                }
+
+                case java_lang_CheneyCollector_memoryProtect: {
+                    cheneyEndMemoryProtect   = popAddress();
+                    cheneyStartMemoryProtect = popAddress();
+/*fprintf(stderr, "*** cheneyStartMemoryProtect=%d, cheneyEndMemoryProtect=%d\n", cheneyStartMemoryProtect, cheneyEndMemoryProtect);*/
+                    break;
+                }
+
+                case java_lang_VM_addToClassStateCache: {
+                    Address state = popAddress();
+                    Address klass = popAddress();
+                    addClassState(klass, state);
+                    break;
+                }
+
+                case java_lang_VM_invalidateClassStateCache: {
+                    pushInt(invalidateClassStateCache());
+                    break;
+                }
+
+                case java_lang_VM_removeVirtualMonitorObject: {
+                    int i;
+                    Address res = null;
+                    if (pendingMonitorStackPointer > 0) {
+/*
+printf("removeVirtualMonitorObject\n");
+printStackTracePrim(ip, fp, "removeVirtualMonitorObject");
+*/
+                        res = pendingMonitors[0];
+                        assume(res != null);
+                        for (i = 0 ; i < MONITOR_CACHE_SIZE-1 ; i++) {
+                            pendingMonitors[i] = pendingMonitors[i+1];
+                        }
+                        pendingMonitors[MONITOR_CACHE_SIZE-1] = null;
+                        pendingMonitorStackPointer--;
+                    }
+                    pushAddress(res);
+                    break;
+                }
+
+                case java_lang_VM_hasVirtualMonitorObject: {
+                    Address obj = popAddress();
+                    boolean res = false;
+                    int i;
+                    for (i = 0 ; i < pendingMonitorStackPointer ; i++) {
+                        if (pendingMonitors[i] == obj) {
+                            res = true;
+                            break;
+                        }
+                    }
+                    pushInt(res);
+                    break;
+                }
+
+/*if[FLOATS]*/
+                case java_lang_VM_fcmpl: {
+                    call(java_lang_VM_do_fcmpl);
+                    break;
+                }
+
+                case java_lang_VM_fcmpg: {
+                    call(java_lang_VM_do_fcmpg);
+                    break;
+                }
+
+                case java_lang_VM_dcmpl: {
+                    call(java_lang_VM_do_dcmpl);
+                    break;
+                }
+
+                case java_lang_VM_dcmpg: {
+                    call(java_lang_VM_do_dcmpg);
+                    break;
+                }
+
+                case java_lang_VM_doubleToLongBits:
+                case java_lang_VM_floatToIntBits:
+                case java_lang_VM_longBitsToDouble:
+                case java_lang_VM_intBitsToFloat: {
+                    break;
+                }
+
+                case java_lang_VM_math: {
+                    jlong value2 = popLong();
+                    jlong value1 = popLong();
+                    int op = popInt();
+                    jlong res = math(op, value1, value2);
+                    pushLong(res);
+                    break;
+                }
+/*end[FLOATS]*/
+
+/*if[CHUNKY_STACKS]*/
+/*else[CHUNKY_STACKS]*/
+//              case java_lang_VM_allocateVirtualStack: {
+//                  int size = popInt();
+//                  pushAddress(calloc(size, 1));  // TEMP
+//                  break;
+//              }
+/*end[CHUNKY_STACKS]*/
+
+/*if[WRITE_BARRIER]*/
+
+                case java_lang_Lisp2Bitmap_clearBitFor: {
+                    Address ea = popAddress();
+                    clearBitFor(ea);
+                    break;
+                }
+
+                case java_lang_Lisp2Bitmap_clearBitsFor: {
+                    Address end = popAddress();
+                    Address start = popAddress();
+                    clearBitsFor(start, end);
+                    break;
+                }
+
+                case java_lang_Lisp2Bitmap_getAddressForBitmapWord: {
+                    Address bitmapWordAddress = popAddress();
+                    pushAddress(getAddressForBitmapWord(bitmapWordAddress));
+                    break;
+                }
+
+                case java_lang_Lisp2Bitmap_getAddressOfBitmapWordFor: {
+                    Address ea = popAddress();
+                    pushAddress(getAddressOfBitmapWordFor(ea));
+                    break;
+                }
+
+                case java_lang_Lisp2Bitmap_setBitFor: {
+                    Address ea = popAddress();
+                    setBitFor(ea);
+                    break;
+                }
+
+                case java_lang_Lisp2Bitmap_testAndSetBitFor: {
+                    Address ea = popAddress();
+                    pushInt(testAndSetBitFor(ea));
+                    break;
+                }
+
+                case java_lang_Lisp2Bitmap_testBitFor: {
+                    Address ea = popAddress();
+                    pushInt(testBitFor(ea));
+                    break;
+                }
+
+                case java_lang_Lisp2Bitmap_iterate: {
+                    pushAddress(bitmapIterate());
+                    break;
+                }
+
+/*end[WRITE_BARRIER]*/
+
+                default: {
+                    fprintf(stderr, "*** Undefined native method: *** %d\n", iparm);
+                    pushInt(iparm);
+                    call(java_lang_VM_do_undefinedNativeMethod);
+                    break;
+                }
+            }
+        }
+
+        /**
+         * invokenative.
+         *
+         * Java Stack: [[... arg2], arg1] -> [VALUE]
+         * <p>
+         */
+/*MAC*/ void do_invokenative(Type $t) {
+/*if[MACROIZE]*/
+            goto invokenativestart;
+/*else[MACROIZE]*/
+//          invokenativemain();
+/*end[MACROIZE]*/
+        }
+
+        /*-----------------------------------------------------------------------*\
+         *                             ALU instructions                          *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * Add two values.
+         *
+         * <p>
+         * Java Stack: ..., VALUE1, VALUE2 -> ..., VALUE1+VALUE2
+         * <p>
+         *
+         * @param t the data type.
+         */
+/*MAC*/ void do_add(Type $t) {
+            switch ($t) {
+                case INT: {
+                    if (NOSILLYADDBUG) {
+                        int r = popInt();
+                        int l = popInt();
+                        pushInt(l+r);
+                    }
+                    break;
+                }
+                case FLOAT: {
+                    int r = popInt();
+                    int l = popInt();
+                    pushInt(addf(l, r));
+                    break;
+                }
+                case LONG: {
+                    jlong r = popLong();
+                    jlong l = popLong();
+                    pushLong(l+r);
+                    break;
+                }
+                case DOUBLE: {
+                    jlong r = popLong();
+                    jlong l = popLong();
+                    pushLong(addd(l, r));
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * Subtract two values.
+         *
+         * <p>
+         * Java Stack: ..., VALUE1, VALUE2 -> ..., VALUE1-VALUE2
+         * <p>
+         *
+         * @param t the data type.
+         */
+/*MAC*/ void do_sub(Type $t) {
+            switch ($t) {
+                case INT: {
+                    int r = popInt();
+                    int l = popInt();
+                    pushInt(l-r);
+                    break;
+                }
+                case FLOAT: {
+                    int r = popInt();
+                    int l = popInt();
+                    pushInt(subf(l, r));
+                    break;
+                }
+                case LONG: {
+                    jlong r = popLong();
+                    jlong l = popLong();
+                    pushLong(l-r);
+                    break;
+                }
+                case DOUBLE: {
+                    jlong r = popLong();
+                    jlong l = popLong();
+                    pushLong(subd(l, r));
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * And two values.
+         *
+         * <p>
+         * Java Stack: ..., VALUE1, VALUE2 -> ..., VALUE1&VALUE2
+         * <p>
+         *
+         * @param t the data type.
+         */
+/*MAC*/ void do_and(Type $t) {
+            switch ($t) {
+                case INT: {
+                    int r = popInt();
+                    int l = popInt();
+                    pushInt(l&r);
+                    break;
+                }
+                case LONG: {
+                    jlong r = popLong();
+                    jlong l = popLong();
+                    pushLong(l&r);
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * Or two values.
+         *
+         * <p>
+         * Java Stack: ..., VALUE1, VALUE2 -> ..., VALUE1|VALUE2
+         * <p>
+         *
+         * @param t the data type.
+         */
+/*MAC*/ void do_or(Type $t) {
+            switch ($t) {
+                case INT: {
+                    int r = popInt();
+                    int l = popInt();
+                    pushInt(l|r);
+                    break;
+                }
+                case LONG: {
+                    jlong r = popLong();
+                    jlong l = popLong();
+                    pushLong(l|r);
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * Xor two values.
+         *
+         * <p>
+         * Java Stack: ..., VALUE1, VALUE2 -> ..., VALUE1^VALUE2
+         * <p>
+         *
+         * @param t the data type.
+         */
+/*MAC*/ void do_xor(Type $t) {
+            switch ($t) {
+                case INT: {
+                    int r = popInt();
+                    int l = popInt();
+                    pushInt(l^r);
+                    break;
+                }
+                case LONG: {
+                    jlong r = popLong();
+                    jlong l = popLong();
+                    pushLong(l^r);
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * Signed left shift a value.
+         *
+         * <p>
+         * Java Stack: ..., VALUE1, VALUE2 -> ..., VALUE1<<(VALUE2&1f)
+         * <p>
+         *
+         * @param t the data type.
+         */
+/*MAC*/ void do_shl(Type $t) {
+            switch ($t) {
+                case INT: {
+                    int r = popInt();
+                    int l = popInt();
+                    pushInt(sll(l, r));
+                    break;
+                }
+                case LONG: {
+                    int   r = popInt();
+                    jlong l = popLong();
+                    pushLong(slll(l, r));
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * Right shift a value.
+         *
+         * <p>
+         * Java Stack: ..., VALUE1, VALUE2 -> ..., VALUE1>>(VALUE2&1f)
+         * <p>
+         *
+         * @param t the data type.
+         */
+/*MAC*/ void do_shr(Type $t) {
+            switch ($t) {
+                case INT: {
+                    int r = popInt();
+                    int l = popInt();
+                    pushInt(sra(l, r));
+                    break;
+                }
+                case LONG: {
+                    int   r = popInt();
+                    jlong l = popLong();
+                    pushLong(sral(l, r));
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * Unsigned right shift a value.
+         *
+         * <p>
+         * Java Stack: ..., VALUE1, VALUE2 -> ..., VALUE1>>>(VALUE2&1f)
+         * <p>
+         *
+         * @param t the data type.
+         */
+/*MAC*/ void do_ushr(Type $t) {
+            switch ($t) {
+                case INT: {
+                    int r = popInt();
+                    int l = popInt();
+                    pushInt(srl(l, r));
+                    break;
+                }
+                case LONG: {
+                    int   r = popInt();
+                    jlong l = popLong();
+                    pushLong(srll(l, r));
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * Multiply two values.
+         *
+         * <p>
+         * Java Stack: ..., VALUE1, VALUE2 -> ..., VALUE1*VALUE2
+         * <p>
+         *
+         * @param t the data type.
+         */
+/*MAC*/ void do_mul(Type $t) {
+            switch ($t) {
+                case INT: {
+                    int r = popInt();
+                    int l = popInt();
+                    pushInt(l*r);
+                    break;
+                }
+                case FLOAT: {
+                    int r = popInt();
+                    int l = popInt();
+                    pushInt(mulf(l, r));
+                    break;
+                }
+                case LONG: {
+                    jlong r = popLong();
+                    jlong l = popLong();
+                    pushLong(l*r);
+                    break;
+                }
+                case DOUBLE: {
+                    jlong r = popLong();
+                    jlong l = popLong();
+                    pushLong(muld(l, r));
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * Divide a value.
+         *
+         * <p>
+         * Java Stack: ..., VALUE1, VALUE2 -> ..., VALUE1/VALUE2
+         * <p>
+         *
+         * @param t the data type.
+         */
+/*MAC*/ void do_div(Type $t) {
+            switch ($t) {
+                case INT: {
+                    int r = popInt();
+                    int l = popInt();
+                    checkReferenceSlots();
+                    if (r == 0) {
+                        resetStackPointerIfRevParms();
+                        call(java_lang_VM_do_arithmeticException);
+                        break;
+                    } else if (l == 0x80000000 && r == -1) {
+                        pushInt(l);
+                        break;
+                    } else {
+                        pushInt(l / r);
+                        break;
+                    }
+                }
+                case FLOAT: {
+                    int r = popInt();
+                    int l = popInt();
+                    pushInt(divf(l, r));
+                    break;
+                }
+                case LONG: {
+                    jlong r = popLong();
+                    jlong l = popLong();
+                    checkReferenceSlots();
+                    if (r == 0) {
+                        resetStackPointerIfRevParms();
+                        call(java_lang_VM_do_arithmeticException);
+                        break;
+                    } else {
+                        pushLong(l / r);
+                        break;
+                    }
+                }
+                case DOUBLE: {
+                    jlong r = popLong();
+                    jlong l = popLong();
+                    pushLong(divd(l, r));
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * Rem a value.
+         *
+         * <p>
+         * Java Stack: ..., VALUE1, VALUE2 -> ..., VALUE1%VALUE2
+         * <p>
+         *
+         * @param t the data type.
+         */
+/*MAC*/ void do_rem(Type $t) {
+            switch ($t) {
+                case INT: {
+                    int r = popInt();
+                    int l = popInt();
+                    checkReferenceSlots();
+                    if (r == 0) {
+                        resetStackPointerIfRevParms();
+                        call(java_lang_VM_do_arithmeticException);
+                        break;
+                    } else if (l == 0x80000000 && r == -1) {
+                        pushInt(l % 1);
+                        break;
+                    } else {
+                        pushInt(l % r);
+                        break;
+                    }
+                }
+                case FLOAT: {
+                    int r = popInt();
+                    int l = popInt();
+                    pushInt(remf(l, r));
+                    break;
+                }
+                case LONG: {
+                    jlong r = popLong();
+                    jlong l = popLong();
+                    checkReferenceSlots();
+                    if (r == 0) {
+                        resetStackPointerIfRevParms();
+                        call(java_lang_VM_do_arithmeticException);
+                        break;
+                    } else {
+                        pushLong(l % r);
+                        break;
+                    }
+                }
+                case DOUBLE: {
+                    jlong r = popLong();
+                    jlong l = popLong();
+                    pushLong(remd(l, r));
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * Negate a value.
+         *
+         * <p>
+         * Java Stack: ..., VALUE -> ..., -VALUE1
+         * <p>
+         *
+         * @param t the data type.
+         */
+/*MAC*/ void do_neg(Type $t) {
+            switch ($t) {
+                case INT: {
+                    /*
+                     * Note: Due to a bug in the Solaris cc compiler when both
+                     *       -o3 and -mac are enabled, this was changed from:
+                     *
+                     *     int r = popInt();
+                     *     pushInt(0 - r);
+                     */
+                    int r = 0 - popInt();
+                    pushInt(r);
+                    break;
+                }
+                case FLOAT: {
+                    int r = popInt();
+                    pushInt(negf(r));
+                    break;
+                }
+                case LONG: {
+                    jlong r = 0 - popLong();
+                    pushLong(r);
+                    break;
+                }
+                case DOUBLE: {
+                    jlong r = popLong();
+                    pushLong(negd(r));
+                    break;
+                }
+                default: shouldNotReachHere();
+            }
+        }
+
+
+        /*-----------------------------------------------------------------------*\
+         *                              Convertions                              *
+        \*-----------------------------------------------------------------------*/
+
+        /**
+         * Convert int to byte.
+         *
+         * <p>
+         * Java Stack: ..., INT -> ..., INT
+         * <p>
+         */
+/*MAC*/ void do_i2b() {
+            int r = popInt();
+            pushInt((byte)r);
+        }
+
+        /**
+         * Convert int to short.
+         *
+         * <p>
+         * Java Stack: ..., INT -> ..., INT
+         * <p>
+         */
+/*MAC*/ void do_i2s() {
+            int r = popInt();
+            pushInt((short)r);
+        }
+
+        /**
+         * Convert int to char.
+         *
+         * <p>
+         * Java Stack: ..., INT -> ..., INT
+         * <p>
+         */
+/*MAC*/ void do_i2c() {
+            int r = popInt();
+            pushInt((unsigned short)r);
+        }
+
+        /**
+         * Convert long to int.
+         *
+         * <p>
+         * Java Stack: ..., LONG -> ..., INT
+         * <p>
+         */
+/*MAC*/ void do_l2i() {
+            jlong r = popLong();
+            pushInt((int)r);
+        }
+
+        /**
+         * Convert int to long.
+         *
+         * <p>
+         * Java Stack: ..., INT -> ..., LONG
+         * <p>
+         */
+/*MAC*/ void do_i2l() {
+            int r = popInt();
+            pushLong(r);
+        }
+
+        /**
+         * Convert int to float.
+         *
+         * <p>
+         * Java Stack: ..., INT -> ..., FLOAT
+         * <p>
+         */
+/*MAC*/ void do_i2f() {
+            int r = popInt();
+            pushInt(i2f(r));
+        }
+
+        /**
+         * Convert long to float.
+         *
+         * <p>
+         * Java Stack: ..., LONG -> ..., FLOAT
+         * <p>
+         */
+/*MAC*/ void do_l2f() {
+            jlong r = popLong();
+            pushInt(l2f(r));
+        }
+
+        /**
+         * Convert float to int.
+         *
+         * <p>
+         * Java Stack: ..., FLOAT -> ..., INT
+         * <p>
+         */
+/*MAC*/ void do_f2i() {
+            int r = popInt();
+            pushInt(f2i(r));
+        }
+
+        /**
+         * Convert float to long.
+         *
+         * <p>
+         * Java Stack: ..., FLOAT -> ..., LONG
+         * <p>
+         */
+/*MAC*/ void do_f2l() {
+            int r = popInt();
+            pushLong(f2l(r));
+        }
+
+        /**
+         * Convert int to double.
+         *
+         * <p>
+         * Java Stack: ..., INT -> ..., DOUBLE
+         * <p>
+         */
+/*MAC*/ void do_i2d() {
+            int r = popInt();
+            pushLong(i2d(r));
+        }
+
+        /**
+         * Convert long to double.
+         *
+         * <p>
+         * Java Stack: ..., LONG -> ..., DOUBLE
+         * <p>
+         */
+/*MAC*/ void do_l2d() {
+            jlong r = popLong();
+            pushLong(l2d(r));
+        }
+
+        /**
+         * Convert float to double.
+         *
+         * <p>
+         * Java Stack: ..., FLOAT -> ..., DOUBLE
+         * <p>
+         */
+/*MAC*/ void do_f2d() {
+            int r = popInt();
+            pushLong(f2d(r));
+        }
+
+        /**
+         * Convert double to int.
+         *
+         * <p>
+         * Java Stack: ..., DOUBLE -> ..., INT
+         * <p>
+         */
+/*MAC*/ void do_d2i() {
+            jlong r = popLong();
+            pushInt(d2i(r));
+        }
+
+        /**
+         * Convert double to long.
+         *
+         * <p>
+         * Java Stack: ..., DOUBLE -> ..., LONG
+         * <p>
+         */
+/*MAC*/ void do_d2l() {
+            jlong r = popLong();
+            pushLong(d2l(r));
+        }
+
+        /**
+         * Convert double to float.
+         *
+         * <p>
+         * Java Stack: ..., DOUBLE -> ..., FLOAT
+         * <p>
+         */
+/*MAC*/ void do_d2f() {
+            jlong r = popLong();
+            pushInt(d2f(r));
+        }
+
+
+        /*-----------------------------------------------------------------------*\
+         *        Complex instrcutions implemented with external function        *
+        \*-----------------------------------------------------------------------*/
+
+#ifdef TRACE
+/*DEF*/ void PRINTSTACK() {
+            Address cls = getClass(exception);
+            Address nm = java_lang_Class_name(cls);
+            char buf[1000];
+            int lth = getArrayLength(nm);
+            if (lth >= 1000) {
+                lth = 999;
+            }
+            memmove(buf, nm, lth);
+            buf[lth] = 0;
+            printStackTracePrim(-1, ip, fp, buf, null);
+        }
+#else
+#define PRINTSTACK() /**/
+#endif
+
+
+        /**
+         * Throw an exception.
+         *
+         * <p>
+         * Java Stack: OOP -> _
+         * <p>
+         */
+/*MAC*/ void do_throw() {
+            if(usingServiceStack()) {
+                fatalVMError("do_throw on service stack");
+            } else {
+                UWord oldip = (UWord)ip;
+                Address exception = popAddress();
+                nullCheck((Address)exception);
+                PRINTSTACK();
+                if (java_lang_ServiceOperation_pendingException != 0) {
+                    fatalVMError("do_throw with pending exception");
+                }
+                java_lang_ServiceOperation_pendingException = exception;
+                threadSwitchFor(java_lang_ServiceOperation_THROW);
+            }
+        }
+
+        /**
+         * Start an exception handler.
+         *
+         * <p>
+         * Compiler Stack: _ -> OOP
+         * <p>
+         */
+/*MAC*/ void do_catch() {
+            Address exception = (Address)java_lang_ServiceOperation_pendingException;
+            assume(exception != null);
+            java_lang_ServiceOperation_pendingException = 0;
+            pushAddress(exception);
+        }
+
+        /**
+         * Execute a monitor enter.
+         *
+         * <p>
+         * Java Stack: OOP -> _
+         * <p>
+         */
+/*MAC*/ void do_monitorenter() {
+            Address obj = popAddress();
+            Address assn;
+            Address klass;
+            nullCheck(obj);
+            assn  = getClassOrAssociation(obj);
+            klass = getClass(obj);
+            if (MONITOR_CACHE_SIZE == 0 || assn != klass || pendingMonitorStackPointer == MONITOR_CACHE_SIZE) {
+                pushAddress(obj);
+                call(java_lang_VM_do_monitorenter);
+            } else {
+                pendingMonitors[pendingMonitorStackPointer++] = obj;
+            }
+        }
+
+        /**
+         * Execute a monitor exit.
+         *
+         * <p>
+         * Java Stack: OOP -> _
+         * <p>
+         */
+/*MAC*/ void do_monitorexit() {
+            Address obj = popAddress();
+            Address assn;
+            Address klass;
+            nullCheck(obj);
+            assn  = getClassOrAssociation(obj);
+            klass = getClass(obj);
+            pendingMonitorAccesses++;
+            if (MONITOR_CACHE_SIZE == 0 || assn != klass || pendingMonitorStackPointer == 0) {
+                pushAddress(obj);
+                call(java_lang_VM_do_monitorexit);
+            } else {
+                Address obj2 = pendingMonitors[--pendingMonitorStackPointer];
+                assume(obj == obj2);
+                pendingMonitors[pendingMonitorStackPointer] = null;
+                pendingMonitorHits++;
+            }
+        }
+
+        /**
+         * Execute a monitor enter.
+         *
+         * <p>
+         * Java Stack: _ -> _
+         * <p>
+         */
+/*MAC*/ void do_class_monitorenter() {
+            pushAddress(getCP());
+            do_monitorenter();
+        }
+
+        /**
+         * Execute a monitor exit.
+         *
+         * <p>
+         * Java Stack: _ -> _
+         * <p>
+         */
+/*MAC*/ void do_class_monitorexit() {
+            pushAddress(getCP());
+            do_monitorexit();
+        }
+
+        /**
+         * Execute a monitor exit.
+         *
+         * <p>
+         * Java Stack: _ -> _
+         * <p>
+         */
+/*MAC*/ void do_class_clinit() {
+            checkReferenceSlots();
+            if (needsInitializing(getCP())) {
+                pushAddress(getCP());
+                call(java_lang_VM_do_class_clinit);
+            }
+        }
+
+        /**
+         * Get the length of an array.
+         *
+         * <p>
+         * Java Stack: ..., OOP -> ..., INT
+         * <p>
+         */
+/*MAC*/ void do_arraylength() {
+            Address oop = popAddress();
+            nullCheck(oop);
+            pushInt(getArrayLength(oop));
+        }
+
+        /**
+         * Allocate an object.
+         *
+         * <p>
+         * Java Stack: ..., CLASS -> ..., OOP
+         * <p>
+         */
+/*MAC*/ void do_new() {
+            checkReferenceSlots();
+            newCount++;
+            if (FASTALLOC) {
+                Address klass = popAddress();
+                if (!needsInitializing(klass)) {
+                    if ((java_lang_Class_modifiers(klass) & java_lang_Modifier_HASFINALIZER) == 0) {
+                        int instanceSize = java_lang_Class_instanceSize(klass);
+                        int allocSize    = (instanceSize * HDR_BYTES_PER_WORD) + HDR_basicHeaderSize;
+                        Address oop      = allocateFast(allocSize, klass, -1);
+                        if (oop != null) {
+                            pushAddress(oop);
+                            newHits++;
+                            nextbytecode();
+                        }
+                    }
+                }
+                pushAddress(klass);
+            }
+            call(java_lang_VM_do_new);
+        }
+
+        /**
+         * Allocate a new array.
+         *
+         * <p>
+         * Java Stack: SIZE, CLASS -> ..., OOP
+         * <p>
+         */
+/*MAC*/ void do_newarray() {
+            checkReferenceSlots();
+            newCount++;
+            if (FASTALLOC) {
+                Address klass = popAddress();
+                int length    = popInt();
+                if (length >= 0) {
+                    Address ctype = java_lang_Class_componentType(klass);
+                    int dataSize = getDataSize(ctype);
+                    int bodySize = length * dataSize;
+                    if (bodySize >= 0) {
+                        int allocSize = roundUpToWord(HDR_arrayHeaderSize + bodySize);
+                        Address oop   = allocateFast(allocSize, klass, length);
+                        if (oop != null) {
+                            pushAddress(oop);
+                            newHits++;
+                            nextbytecode();
+                        }
+                    }
+                }
+                pushInt(length);
+                pushAddress(klass);
+            }
+            call(java_lang_VM_do_newarray);
+        }
+
+        /**
+         * Allocate a new array dimension.
+         *
+         * <p>
+         * Java Stack: OOP, SIZE -> ..., OOP
+         * <p>
+         */
+/*MAC*/ void do_newdimension() {
+            call(java_lang_VM_do_newdimension);
+        }
+
+        /**
+         * Test to see if the object us a subclass of the class.
+         *
+         * @param obj the object
+         * @param klass the class
+         */
+/*MAC*/ boolean isSubClass(Address $obj, Address $klass) {
+            Address objklass = getClass($obj);
+            for (;;) {
+                if ($klass == objklass) {
+                    return true;
+                }
+                objklass = java_lang_Class_superType(objklass);
+                if (objklass == null) {
+                    return false;
+                }
+            }
+        }
+
+        /**
+         * Instanceof.
+         *
+         * <p>
+         * Java Stack: ..., OOP, CLASS -> ..., INT
+         * <p>
+         */
+/*MAC*/ void do_instanceof() {
+            Address klass = popAddress();
+            Address obj   = popAddress();
+            checkReferenceSlots();
+            if (obj == null || klass == null) {
+                pushInt(false);
+            } else if (isSubClass(obj, klass)) {
+                pushInt(true);
+            } else {
+                pushAddress(obj);
+                pushAddress(klass);
+                call(java_lang_VM_do_instanceof);
+            }
+        }
+
+        /**
+         * Checkcast.
+         *
+         * <p>
+         * Java Stack: ..., OOP, CLASS -> ..., OOP
+         * <p>
+         */
+/*MAC*/ void do_checkcast() {
+            Address klass = popAddress();
+            Address obj   = popAddress();
+            checkReferenceSlots();
+            if (obj != null && !isSubClass(obj, klass)) {
+                pushAddress(obj);
+                pushAddress(klass);
+                call(java_lang_VM_do_checkcast);
+            } else {
+                pushAddress(obj);
+            }
+        }
+
+        /**
+         * Lookup.
+         *
+         * <p>
+         * Java Stack: KEY, ARRAY -> VALUE
+         * <p>
+         *
+         * @param t the type of array to lookup
+         */
+/*MAC*/ void do_lookup(Type $t) {
+            switch ($t) {
+                case BYTE:  call(java_lang_VM_do_lookup_b); break;
+                case SHORT: call(java_lang_VM_do_lookup_s); break;
+                case INT:   call(java_lang_VM_do_lookup_i); break;
+                default: shouldNotReachHere();
+            }
+        }
+
+        /**
+         * Reserved.
+         *
+         * <p>
+         * Compiler Stack: ... -> ...
+         * <p>
+         *
+         * @param n ignored parameter
+         */
+/*MAC*/ void do_res(int $n) {
+            shouldNotReachHere();
+        }

@@ -1,0 +1,152 @@
+/*
+ * Copyright 2004 Sun Microsystems, Inc. All Rights Reserved.
+ *
+ * This software is the proprietary information of Sun Microsystems, Inc.
+ * Use is subject to license terms.
+ *
+ * This is a part of the Squawk JVM.
+ */
+
+/*
+ * This file define types and functions to abstract the size of machine words and addresses.
+ * This eases portability between 32 and 64 bit platforms.
+ */
+
+typedef void*          Address;
+typedef unsigned char* ByteAddress;
+#if SQUAWK_64
+typedef ujlong UWord;
+typedef jlong Offset;
+const Address ADDRESS_MAX = (Address)0xFFFFFFFFFFFFFFFFL;
+const UWord WORD_MAX = (UWord)0xFFFFFFFFFFFFFFFFL;
+const UWord DEADBEEF = 0xDEADBEEFDEADBEEFL;
+#else
+typedef unsigned int UWord;
+typedef int Offset;
+const Address ADDRESS_MAX = (Address)0xFFFFFFFFL;
+const UWord WORD_MAX = (UWord)0xFFFFFFFFL;
+const UWord DEADBEEF = 0xDEADBEEFL;
+#endif /* SQUAWK_64 */
+typedef UWord* UWordAddress;
+
+        /**
+         * Unsigned comparison between two machine word sized values.
+         *
+         * @param left  the first value
+         * @param right the second value
+         * @return true if 'left' is lower than 'right' in an unsigned comparison
+         */
+/*DEF*/ boolean lo(Address $left, Address $right) {
+            return (UWord)$left < (UWord)$right;
+        }
+
+        /**
+         * Unsigned comparison between two machine word sized values.
+         *
+         * @param left  the first value
+         * @param right the second value
+         * @return true if 'left' is lower than or equal to 'right' in an unsigned comparison
+         */
+/*DEF*/ boolean loeq(Address $left, Address $right) {
+            return (UWord)$left <= (UWord)$right;
+        }
+
+        /**
+         * Unsigned comparison between two machine word sized values.
+         *
+         * @param left  the first value
+         * @param right the second value
+         * @return true if 'left' is higher than 'right' in an unsigned comparison
+         */
+/*DEF*/ boolean hi(Address $left, Address $right) {
+            return (UWord)$left > (UWord)$right;
+        }
+
+        /**
+         * Unsigned comparison between two machine word sized values.
+         *
+         * @param left  the first value
+         * @param right the second value
+         * @return true if 'left' is higher than or equal to 'right' in an unsigned comparison
+         */
+/*DEF*/ boolean hieq(Address $left, Address $right) {
+            return (UWord)$left >= (UWord)$right;
+        }
+
+        /**
+         * Signed comparison between two machine word sized values.
+         *
+         * @param left  the first value
+         * @param right the second value
+         * @return true if 'left' is lower than 'right' in a signed comparison
+         */
+/*DEF*/ boolean lt(Address $left, Address $right) {
+            return (Offset)$left < (Offset)$right;
+        }
+
+        /**
+         * Signed comparison between two machine word sized values.
+         *
+         * @param left  the first value
+         * @param right the second value
+         * @return true if 'left' is lower than or equal to 'right' in a signed comparison
+         */
+/*DEF*/ boolean le(Address $left, Address $right) {
+            return (Offset)$left <= (Offset)$right;
+        }
+
+        /**
+         * Signed comparison between two machine word sized values.
+         *
+         * @param left  the first value
+         * @param right the second value
+         * @return true if 'left' is higher than 'right' in a signed comparison
+         */
+/*DEF*/ boolean gt(Address $left, Address $right) {
+            return (Offset)$left > (Offset)$right;
+        }
+
+        /**
+         * Signed comparison between two machine word sized values.
+         *
+         * @param left  the first value
+         * @param right the second value
+         * @return true if 'left' is higher than or equal to 'right' in a signed comparison
+         */
+/*DEF*/ boolean ge(Address $left, Address $right) {
+            return (Offset)$left >= (Offset)$right;
+        }
+
+
+        /**
+         * Adds a machine word sized signed offset to an address.
+         *
+         * @param address  the base address
+         * @param offset   the signed offset (in bytes) to add
+         * @return the result of adding 'offset' to 'address'
+         */
+/*DEF*/ Address Address_add(Address $address, Offset $offset) {
+            return (Address)((UWord)$address + (Offset)$offset);
+        }
+
+        /**
+         * Subtracts a machine word sized signed offset to an address.
+         *
+         * @param address  the base address
+         * @param offset   the signed offset (in bytes) to subtract
+         * @return the result of subtracting 'offset' from 'address'
+         */
+/*DEF*/ Address Address_sub(Address $address, Offset $offset) {
+            return (Address)((UWord)$address - (Offset)$offset);
+        }
+
+        /**
+         * Computes the signed distance between two addresses.
+         *
+         * @param address1  the first address
+         * @param address2  the second address
+         * @return the signed distance (in bytes) between 'address1' and 'address2'
+         */
+/*DEF*/ Offset Address_diff(Address $address1, Address $address2) {
+            return (Offset)$address1 - (Offset)$address2;
+        }

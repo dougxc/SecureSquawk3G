@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--JBuilder XML Project-->
+<project>
+  <property category="generalFormatting" name="blockIndent" value="4"/>
+  <property category="javaFormatting" name="packageThreshold" value="0"/>
+  <property category="javaFormatting" name="wrapAtColumn" value="120"/>
+  <property category="javadoc" name="custom.tags.1" value="todo;a;To Do:"/>
+  <property category="personality" name="personality" value=""/>
+  <property category="runtime" name="ConfigurationCount" value="7"/>
+  <property category="runtime" name="DefaultConfiguration" value="7"/>
+  <property category="runtime.0" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.0" name="ConfigurationName" value="mapper (unix)"/>
+  <property category="runtime.0" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.0" name="application.class" value="java.lang.Mapper"/>
+  <property category="runtime.0" name="application.parameters" value="1.isolate"/>
+  <property category="runtime.0" name="application.vmparameters" value="-Xbootclasspath/a:mapper/classes:j2me/j2meclasses:j2se/classes"/>
+  <property category="runtime.1" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.1" name="ConfigurationName" value="mapper test1.suite"/>
+  <property category="runtime.1" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.1" name="application.class" value="java.lang.SymbolsMapper"/>
+  <property category="runtime.1" name="application.parameters" value="-start 0 test1.suite"/>
+  <property category="runtime.1" name="application.vmparameters" value="-Xbootclasspath/a:mapper\classes;j2me\j2meclasses;j2se\classes"/>
+  <property category="runtime.2" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.2" name="ConfigurationName" value="mapper samples.suite"/>
+  <property category="runtime.2" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.2" name="application.class" value="java.lang.SymbolsMapper"/>
+  <property category="runtime.2" name="application.parameters" value="samples.suite"/>
+  <property category="runtime.2" name="application.vmparameters" value="-Xbootclasspath/a:mapper\classes;j2me\j2meclasses;j2se\classes"/>
+  <property category="runtime.3" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.3" name="ConfigurationName" value="mapper test0.suite"/>
+  <property category="runtime.3" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.3" name="application.class" value="java.lang.SymbolsMapper"/>
+  <property category="runtime.3" name="application.parameters" value="test0.suite"/>
+  <property category="runtime.3" name="application.vmparameters" value="-Xbootclasspath/a:mapper\classes;j2me\j2meclasses;j2se\classes"/>
+  <property category="runtime.4" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.4" name="ConfigurationName" value="cmapper  (unix)"/>
+  <property category="runtime.4" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.4" name="application.class" value="java.lang.ClasspathMapper"/>
+  <property category="runtime.4" name="application.parameters" value="-traceoms"/>
+  <property category="runtime.4" name="application.vmparameters" value="-Xbootclasspath/a:j2se/classes:mapper/classes:j2me/j2meclasses:translator/j2meclasses"/>
+  <property category="runtime.5" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.5" name="ConfigurationName" value="cmapper  -s:1 2.isolate (unix)"/>
+  <property category="runtime.5" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.5" name="application.class" value="java.lang.ClasspathMapper"/>
+  <property category="runtime.5" name="application.parameters" value=" -s:1 5.isolate"/>
+  <property category="runtime.5" name="application.vmparameters" value="-Xbootclasspath/a:j2se/classes:mapper/classes:j2me/j2meclasses:translator/j2meclasses"/>
+  <property category="runtime.6" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.6" name="ConfigurationName" value="cmapper -s:1 1.isolate (win)"/>
+  <property category="runtime.6" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.6" name="application.class" value="java.lang.ClasspathMapper"/>
+  <property category="runtime.6" name="application.parameters" value="-s:1 1.isolate"/>
+  <property category="runtime.6" name="application.vmparameters" value="-Xbootclasspath/a:j2se\classes;mapper\classes;j2me\j2meclasses;translator\j2meclasses"/>
+  <property category="runtime.7" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.7" name="ConfigurationName" value="cmapper (win)"/>
+  <property category="runtime.7" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.7" name="application.class" value="java.lang.ClasspathMapper"/>
+  <property category="runtime.7" name="application.vmparameters" value="-Xbootclasspath/a:mapper\classes;j2me\j2meclasses;j2se\classes;translator\j2meclasses"/>
+  <property category="serverservices" name="disabled.services" value="jdatastore;sqlj"/>
+  <property category="serverservices" name="single.server.name" value="Tomcat 4.0"/>
+  <property category="sys" name="AuthorLabel" value="@author"/>
+  <property category="sys" name="BackupPath" value="bak"/>
+  <property category="sys" name="CheckStable" value="1"/>
+  <property category="sys" name="Company" value=""/>
+  <property category="sys" name="CompanyLabel" value="Company:"/>
+  <property category="sys" name="Copyright" value="Copyright (c) 2004"/>
+  <property category="sys" name="CopyrightLabel" value="Copyright:"/>
+  <property category="sys" name="DefaultPath" value="../../mapper/src"/>
+  <property category="sys" name="Description" value=""/>
+  <property category="sys" name="DescriptionLabel" value="Description:"/>
+  <property category="sys" name="DocPath" value="doug/doc"/>
+  <property category="sys" name="ExcludeClassEnabled" value="0"/>
+  <property category="sys" name="IncludeTestPath" value="1"/>
+  <property category="sys" name="InstanceVisibility" value="2"/>
+  <property category="sys" name="JDK" value="java version 1.4.2_01-b06"/>
+  <property category="sys" name="JvmVersion" value="1.2"/>
+  <property category="sys" name="LastTag" value="0"/>
+  <property category="sys" name="Libraries" value="j2sdk1.4.1 Runtime Library;j2me;translator"/>
+  <property category="sys" name="MakeStable" value="0"/>
+  <property category="sys" name="OutPath" value="../../mapper/classes"/>
+  <property category="sys" name="SourcePath" value="../../mapper/src"/>
+  <property category="sys" name="TestPath" value="../../mapper/src"/>
+  <property category="sys" name="Title" value=""/>
+  <property category="sys" name="TitleLabel" value="Title:"/>
+  <property category="sys" name="Version" value="1.0"/>
+  <property category="sys" name="VersionLabel" value="@version"/>
+  <property category="sys" name="WorkingDirectory" value="../../"/>
+</project>

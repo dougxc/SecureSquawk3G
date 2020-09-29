@@ -1,0 +1,24 @@
+PROG=	libCSystem.so
+
+CC= cc
+
+INCLUDES= -I/usr/j2sdk1.4.2/include -I/usr/j2sdk1.4.2/include/linux
+
+CPPFLAGS= ${INCLUDES} 
+
+OBJS= CSystem.o ia32_linux.o
+
+%.o: 	%.c
+	${CC} -c ${INCLUDES} $<
+
+%.o: 	%.s
+	as -o $@ $<
+
+all: 	${PROG}
+
+${PROG}: ${OBJS}
+	ld -G -o $@ ${OBJS}
+
+clean: 
+	${RM} ${OBJS} ${PROG}
+

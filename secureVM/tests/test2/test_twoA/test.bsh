@@ -1,0 +1,16 @@
+/* Test Two - A */
+
+String testClass			= "P.Y";
+String expectedError		= "IllegalClassResourceAccessError";
+
+String[] req 	  	        = {"grantee=P.X,grantor=java.lang.Object," +
+                                                            "type=subclass,key=cldc_subclass,passwd=123456",
+
+                               "grantee=P.Y,grantor=java.lang.Object," +
+                                                                "type=subclass,key=cldc_subclass,passwd=123456"
+                             };
+
+String description			= "Class P.X and P.Y hold permits to subclass java.lang.object. "+
+                                                                "Each are in different primary domains, and hence if P.Y " +
+                                                                "should attempt to access P.X (instanciate) an error " +
+                                                                "should result as their is no shared trust between them.";

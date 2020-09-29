@@ -1,0 +1,17 @@
+/* Test Two - B */
+
+String testClass			= "P.Y";
+String expectedError		= "";
+
+String[] req 	  	        = {"grantee=P.X,grantor=java.lang.Object," +
+							    "type=subclass,key=cldc_subclass,passwd=123456",
+								
+                               "grantee=P.Y,grantor=java.lang.Object," + 
+								"type=subclass,key=cldc_subclass,passwd=123456"
+                             };
+
+String description			= "Class P.X and P.Y hold permits to subclass java.lang.object. "+
+								"Each are in different primary domains, however P.X has set " +
+								"the TACC_CLASS_RESOURCE_ACCESS flag allowing anyone to access " +
+								"class resources. If P.Y attempts to access P.X (instanciate) " +
+								"the operation should succeed.";

@@ -1,0 +1,276 @@
+/*
+ * Copyright 2004 Sun Microsystems, Inc. All Rights Reserved.
+ *
+ * This software is the proprietary information of Sun Microsystems, Inc.
+ * Use is subject to license terms.
+ *
+ * This is a part of the Squawk JVM.
+ */
+
+#define bitmap     (java_lang_Lisp2Bitmap_start)
+#define bitmapBase (java_lang_Lisp2Bitmap_base)
+#define bitmapSize (java_lang_Lisp2Bitmap_size)
+#define bitmapEnd  Address_add(java_lang_Lisp2Bitmap_start, bitmapSize)
+
+#define BIT_INDEX_MASK  (~(HDR_BITS_PER_WORD - 1))
+
+    /*---------------------------------------------------------------------------*\
+     *                   Bit index based bitmap methods                          *
+    \*---------------------------------------------------------------------------*/
+
+        /**
+         * Given a bit index return index of bitmap word containing the bit.
+         *
+         * @param n  an index into the bitmap
+         * @return the index of the bitmap word containing bit <code>n</code>
+         */
+/*MAC*/ UWord getBitmapIndex(UWord $n) {
+            return $n >> HDR_LOG2_BITS_PER_WORD;
+        }
+
+        /**
+         * Given a bit index return position of the bit in the bitmap word containing it.
+         *
+         * @param n  an index into the bitmap
+         * @return the position of bit <code>n</code> in the bitmap word containing it
+         */
+/*MAC*/ int getBitmapBit(UWord $n) {
+            return (int)($n & BIT_INDEX_MASK);
+        }
+
+        /**
+         * Given a bit index return a mask that can be used to extract the bit from the bitmap word containing it.
+         *
+         * @param n  an index into the bitmap
+         * @return a mask that can be used to extract bit <code>n</code> from the bitmap word containing it
+         */
+/*MAC*/ UWord getBitmapMask(UWord $n) {
+            return (UWord)1 << getBitmapBit($n);
+        }
+
+        /**
+         * Gets the address of the word in the bitmap that contains a given bit
+         *
+         * @param n   the bit index for which the corresponding bitmap word is required
+         * @return    the address of the bitmap word that contains the <code>n</code>th bit
+         */
+/*MAC*/ Address getAddressOfBitmapWordForNthBit(UWord $n) {
+            return Address_add(bitmapBase, getBitmapIndex($n) << HDR_LOG2_BYTES_PER_WORD);
+        }
+
+        /**
+         * Determines if a bit index corresponds with a word in the bitmap.
+         *
+         * @param n  the bit index to test
+         * @return true if bit <code>n</code> corresponds with a word in the bitmap
+         */
+/*MAC*/ boolean isNthBitInRange(UWord $n) {
+/*fprintf(stderr, format("isNthBitInRange:\n  base\t= %A\n  bmap\t= %A\n  n\t= %A\n  bmw\t= %A\n"), bitmapBase, bitmap, $n, getAddressOfBitmapWordForNthBit($n));*/
+            return hieq(getAddressOfBitmapWordForNthBit($n), bitmap) && lo(getAddressOfBitmapWordForNthBit($n), bitmapEnd);
+        }
+
+        /**
+         * Sets a specified bit in the bitmap.
+         *
+         * @param n       the index of the bit to be set
+         */
+/*MAC*/ void setNthBit(UWord $n) {
+            UWord index = getBitmapIndex($n);
+            UWord mask = getBitmapMask($n);
+            assume(isNthBitInRange($n));
+            setUWord(bitmapBase, index, getUWord(bitmapBase, index) | mask);
+        }
+
+        /**
+         * Clears a specified bit in the bitmap.
+         *
+         * @param n       the index of the bit to be set
+         */
+/*MAC*/ void clearNthBit(UWord $n) {
+            UWord index = getBitmapIndex($n);
+            UWord mask = ~getBitmapMask($n);
+            assume(isNthBitInRange($n));
+            setUWord(bitmapBase, index, getUWord(bitmapBase, index) & mask);
+        }
+
+
+        /**
+         * Determines if a specified bit in the bitmap is set.
+         *
+         * @param n       the index of the bit to be tested
+         * @return true if bit <code>n</code> is set
+         */
+/*MAC*/ boolean testNthBit(UWord $n) {
+            return (getUWord(bitmapBase, getBitmapIndex($n)) & getBitmapMask($n)) != 0;
+        }
+
+        /**
+         * Determines if a specified bit in the bitmap is set and sets it if it isn't.
+         *
+         * @param n       the index of the bit to be tested
+         * @return true if bit <code>n</code> was set before this call
+         */
+/*MAC*/ boolean testAndSetNthBit(UWord $n) {
+            if (testNthBit($n)) {
+                return true;
+            } else {
+                setNthBit($n);
+                return false;
+            }
+        }
+
+        /*---------------------------------------------------------------------------*\
+         *                   Address based bitmap methods                            *
+        \*---------------------------------------------------------------------------*/
+
+        /**
+         * Converts an address to the index of its corresponsing bit in the bitmap.
+         *
+         * @param ea  the address to convert
+         * @return the index of the bit in the bitmap for <code>ea</code>
+         */
+/*MAC*/ UWord asBitIndex(Address $ea) {
+            return (((UWord)$ea) >> HDR_LOG2_BYTES_PER_WORD);
+        }
+
+        /**
+         * Gets the address of the word in the bitmap that contains the bit for a given address.
+         *
+         * @param ea   the address for which the corresponding bitmap word is required
+         * @return     the address of the bitmap word that contains the bit for <code>ea</code>
+         */
+/*MAC*/ Address getAddressOfBitmapWordFor(Address $ea) {
+            return getAddressOfBitmapWordForNthBit(asBitIndex($ea));
+        }
+
+        /**
+         * Gets the address that corresponds to the first bit in the bitmap word at a given address.
+         *
+         * @param bitmapWordPtr  the address of a word in the bitmap
+         * @return the address corresponding to the first bit in the word at <code>bitmapWordPtr</code>
+         */
+/*MAC*/ Address getAddressForBitmapWord(Address $bitmapWordPtr) {
+            return (Address)((UWord)Address_diff($bitmapWordPtr, bitmapBase) << HDR_LOG2_BITS_PER_BYTE);
+        }
+
+        /**
+         * Sets the appropriate bit in the bitmap for a given address.
+         *
+         * @param ea      the effective address for which the corresponding bit is to be set
+         */
+/*MAC*/ inline void setBitFor(Address $ea) {
+/*fprintf(stderr, format("setBitFor:\n  ea\t= %A\n  bmw0\t= %A\n"), $ea, getAddressOfBitmapWordFor(java_lang_GC_ramStart));*/
+            setNthBit(asBitIndex($ea));
+        }
+
+        /**
+         * Clears the appropriate bit in the bitmap for a given address.
+         *
+         * @param ea      the effective address for which the corresponding bit is to be set
+         */
+/*MAC*/ void clearBitFor(Address $ea) {
+            clearNthBit(asBitIndex($ea));
+        }
+
+        /**
+         * Determines if the bit in the bitmap for a given address is set.
+         *
+         * @param ea      the effective address for which the corresponding bit to be tested
+         * @return true if the bit for <code>ea</code> is set
+         */
+/*MAC*/ boolean testBitFor(Address $ea) {
+            return testNthBit(asBitIndex($ea));
+        }
+
+        /**
+         * Determines if the bit in the bitmap for a given address is set and sets it if it isn't.
+         *
+         * @param ea      the effective address for which the corresponding bit to be tested
+         * @return true if the bit for <code>ea</code> was set before this call
+         */
+/*MAC*/ boolean testAndSetBitFor(Address $ea) {
+            return testAndSetNthBit(asBitIndex($ea));
+        }
+
+        /**
+         * Clears the bits in the bitmap corresponding to the range of memory <code>[start .. end)</code>
+         *
+         * @param start   the start of the memory range for which the bits are to be cleared
+         * @param end     the end of the memory range for which the bits are to be cleared
+         */
+        void clearBitsFor(Address start, Address end) {
+            const int alignment = HDR_BITS_PER_WORD * HDR_BYTES_PER_WORD;
+            Address alignedStart = (Address)roundUp((UWord)start, alignment);
+            Address alignedEnd;
+
+            while (lo(start, alignedStart)) {
+                clearBitFor(start);
+                start = Address_add(start, HDR_BYTES_PER_WORD);
+            }
+
+            // It is always safe to clear past end, so align up
+            alignedEnd = (Address)roundUp((UWord)end, alignment);
+            zeroWords(getAddressOfBitmapWordFor(alignedStart), getAddressOfBitmapWordFor(alignedEnd));
+
+            testAndSetBitFor(start);
+        }
+
+        /*---------------------------------------------------------------------------*\
+         *                                Iteration                                  *
+        \*---------------------------------------------------------------------------*/
+
+        /**
+         * Iterates to the next pointer whose bit is set in the bitmap. This updates the values
+         * of the global variables used for iteration such that java.lang.Lisp2Bitmap.nextIterationOopAddress
+         * will contain the address of the next pointer whose bit is set. If the iteration is
+         * finished, then the value of the variable will be 0.
+         */
+/*MAC*/ Address bitmapIterate() {
+            while (true) {
+                if (java_lang_Lisp2Bitmap_Iterator_next >= java_lang_Lisp2Bitmap_Iterator_end) {
+                    java_lang_Lisp2Bitmap_Iterator_next = 0;
+                    java_lang_Lisp2Bitmap_Iterator_inUse = false;
+                    return 0;
+                } else {
+                    if (testBitFor(java_lang_Lisp2Bitmap_Iterator_next)) {
+                        Address value = java_lang_Lisp2Bitmap_Iterator_next;
+                        java_lang_Lisp2Bitmap_Iterator_next = Address_add(java_lang_Lisp2Bitmap_Iterator_next, HDR_BYTES_PER_WORD);
+                        return value;
+                    }
+                    java_lang_Lisp2Bitmap_Iterator_next = Address_add(java_lang_Lisp2Bitmap_Iterator_next, HDR_BYTES_PER_WORD);
+                }
+            }
+        }
+
+#if 0
+                case java_lang_Lisp2Bitmap_clearNthBit: {
+                    UWord n = popWord();
+                    clearNthBit(n);
+                    break;
+                }
+
+                case java_lang_Lisp2Bitmap_getAddressOfBitmapWordForNthBit: {
+                    UWord n = popWord();
+                    pushAddress(getAddressOfBitmapWordForNthBit(n));
+                    break;
+                }
+
+                case java_lang_Lisp2Bitmap_setNthBit: {
+                    UWord n = popWord();
+                    setNthBit(n);
+                    break;
+                }
+
+                case java_lang_Lisp2Bitmap_testAndSetNthBit: {
+                    UWord n = popWord();
+                    pushInt(testAndSetNthBit(n));
+                    break;
+                }
+
+                case java_lang_Lisp2Bitmap_testNthBit: {
+                    UWord n = popWord();
+                    pushInt(testNthBit(n));
+                    break;
+                }
+#endif
+

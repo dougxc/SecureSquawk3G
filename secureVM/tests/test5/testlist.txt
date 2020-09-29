@@ -1,0 +1,57 @@
+If exception is package-private, only those classes in the same package can throw.
+
+- Should class be allowed to catch an exception if no CRA ?
+
+
+5. EFx tests
+   a. [EFx no, catch package-private exceptions -> succeed]
+      exception class, package: TestException, P-trusted
+        certificate: none
+      exception-throwing class, package: X, P-trusted
+        certificate: EFx no 
+      base class, package: X, P-trusted
+      catch implementation: X catch TestException exception thrown by X
+
+	// same domain, check that can throw without EFx set
+
+   b. [EFx no, catch package-private exceptions -> succeed]
+      exception class, package: TestException, P-trusted
+        certificate: none
+      exception-throwing class, package: X, P-trusted
+        certificate: EFx yes 
+      base class, package: X, P-trusted
+      catch implementation: X catch TestException exception thrown by X
+
+	// same trust domain, check that can throw with EFx set
+
+
+   c. [EFx no, catch package-private exceptions -> succeed]
+      exception class, package: TestException, P-trusted
+        certificate; none
+      exception-throwing class, package: Y, Q-untrusted
+        certificate: MFx
+      base class, package: X, P-trusted
+      catch implementation: Y catch TestException exception thrown by Y
+
+	  // The code doesnt have a package-private exception
+
+   
+   d. [EFx no, catch package-private exceptions -> fail]
+      exception class, package: TestException, P-trusted
+        certificate: none
+      exception-throwing class, package: X, P-trusted
+        certificate: EFx no
+      intermediate class, package: Y, Q-untrusted
+        certificate: MFx
+      base class, package; X, P-trusted
+      catch implementation: X catch TestException exception thrown by Y
+    
+   e. [EFx yes, catch package-private exceptions -> succeed]
+      exception class, package: TestException, P-trusted
+        certificate: none
+      exception-throwing class, package: X, P-trusted
+        certificate: EFx no
+      intermediate class, package: Y, Q-untrusted
+        certificate: MFx
+      base class, package; X, P-trusted
+      catch implementation: X catch TestException exception thrown by Y

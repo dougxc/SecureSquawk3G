@@ -1,0 +1,48 @@
+# This file lists classes that are problems for BCO, the translator, the
+# preverifier or any combination of these. By 'problem' I mean a class that
+# should verifier but doesn't or a class that doesn't verify but should
+
+
+# Valid classes that are not verifiable by the preverifier (and so must be ignored by BCO until it generates stack maps)
+javasoft.sqe.tests.vm.instr.invokespecial.invokespecial008.invokespecial00804m1.invokespecial00804m1p
+javasoft.sqe.tests.vm.instr.invokespecial.invokespecial008.invokespecial00804m1.invokespecial00804m1pr
+javasoft.sqe.tests.vm.instr.invokespecial.invokespecial008.invokespecial00806m1.invokespecial00806m1p
+javasoft.sqe.tests.vm.instr.invokespecial.invokespecial008.invokespecial00806m1.invokespecial00806m1pg
+javasoft.sqe.tests.vm.instr.invokespecial.invokespecial012.invokespecial01202m1.invokespecial01202m1
+javasoft.sqe.tests.vm.classfmt.ins.instr_205.instr_20501m1.instr_20501m1p
+
+# Classes with malformed optional attributes. These are skipped by a CLDC class loader which
+# does not parse the internals of such attributes. BCO however does parse the internals of
+# these attributes.
+javasoft.sqe.tests.vm.classfmt.atr.atrdep203.atrdep20301m1.atrdep20301m1n
+javasoft.sqe.tests.vm.classfmt.atr.atrexc004.atrexc00401m1.atrexc00401m1n
+javasoft.sqe.tests.vm.classfmt.atr.atrexc005.atrexc00501m1.atrexc00501m1n
+javasoft.sqe.tests.vm.classfmt.atr.atrinc201.atrinc20101m1_1.atrinc20101m1_1n
+javasoft.sqe.tests.vm.classfmt.atr.atrinc205.atrinc20501m1_1.atrinc20501m1_1n
+javasoft.sqe.tests.vm.classfmt.atr.atrinc207.atrinc20701m1_1.atrinc20701m1_1n
+javasoft.sqe.tests.vm.classfmt.atr.atrinc207.atrinc20702m1_1.atrinc20702m1_1n
+javasoft.sqe.tests.vm.classfmt.atr.atrinc208.atrinc20801m1_1.atrinc20801m1_1n
+javasoft.sqe.tests.vm.classfmt.atr.atrinc208.atrinc20802m1_1.atrinc20802m1_1n
+javasoft.sqe.tests.vm.classfmt.atr.atrinc209.atrinc20901m1_1.atrinc20901m1_1n
+javasoft.sqe.tests.vm.classfmt.atr.atrinc209.atrinc20902m1_1.atrinc20902m1_1n
+javasoft.sqe.tests.vm.classfmt.atr.atrinc209.atrinc20903m1_1.atrinc20903m1_1n
+javasoft.sqe.tests.vm.classfmt.atr.atrinc210.atrinc21001m1_1.atrinc21001m1_1n
+javasoft.sqe.tests.vm.classfmt.atr.atrinc210.atrinc21002m1_1.atrinc21002m1_1n
+javasoft.sqe.tests.vm.classfmt.atr.atrinc210.atrinc21003m1_1.atrinc21003m1_1n
+javasoft.sqe.tests.vm.classfmt.atr.atrlnt201.atrlnt20101m1.atrlnt20101m1n
+javasoft.sqe.tests.vm.classfmt.atr.atrsnt202.atrsnt20201m1.atrsnt20201m1n
+
+
+# Classes which are valid but link with invalid classes and therefore are a problem for BCO's
+# complete graph building algorithm
+javasoft.sqe.tests.vm.instr.newX.new009.new00901m1.new00901m1nr
+javasoft.sqe.tests.vm.instr.putfield.putfield010.putfield01001m1.putfield01001m1nr
+javasoft.sqe.tests.vm.instr.putfield.putfield018.putfield01801m1.putfield01801m1nr
+javasoft.sqe.tests.vm.instr.putstatic.putstatic009.putstatic00901m1.putstatic00901m1nr
+javasoft.sqe.tests.vm.instr.putstatic.putstatic009.putstatic00903m1.putstatic00903m1nr
+javasoft.sqe.tests.vm.instr.putstatic.putstatic010.putstatic01001m1.putstatic01001m1nr
+
+# Classes which access a primitive constant field with 'getstatic' which doesn't
+# for the translator work as Squawk removes these fields (and thus does not have the
+# constant value for replcaing the 'getstatic' with a 'const_*' instruction)
+javasoft.sqe.tests.vm.classfmt.atr.atrcvl004.atrcvl00401m1.atrcvl00401m1p

@@ -1,0 +1,41 @@
+sh runtck.sh 0
+sh runtck.sh 1
+sh runtck.sh 2
+sh runtck.sh 3
+sh runtck.sh 4
+sh runtck.sh 5
+sh runtck.sh 6
+sh runtck.sh 7
+sh runtck.sh 8
+sh runtck.sh 9
+
+sh runtck.sh 10
+sh runtck.sh 11
+sh runtck.sh 12
+sh runtck.sh 13
+sh runtck.sh 14
+sh runtck.sh 15
+sh runtck.sh 16
+sh runtck.sh 17
+sh runtck.sh 18
+sh runtck.sh 19
+
+sh runtck.sh 20
+sh runtck.sh 21
+sh runtck.sh 22
+sh runtck.sh 23
+sh runtck.sh 24
+sh runtck.sh 25
+sh runtck.sh 26
+sh runtck.sh 27
+sh runtck.sh 28
+sh runtck.sh 29
+
+sh runtck.sh 30
+sh runtck.sh 31
+sh runtck.sh 32
+sh runtck.sh 33
+sh runtck.sh 34
+sh runtck.sh 35
+sh runtck.sh 36
+sh runtck.sh 37

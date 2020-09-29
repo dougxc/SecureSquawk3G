@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--JBuilder XML Project-->
+<project>
+  <property category="debug.1" name="BuildTargetOnDebug" value="&lt;None&gt;"/>
+  <property category="debug.2" name="BuildTargetOnDebug" value="&lt;None&gt;"/>
+  <property category="debug.3" name="BuildTargetOnDebug" value="&lt;None&gt;"/>
+  <property category="debug.4" name="BuildTargetOnDebug" value="&lt;None&gt;"/>
+  <property category="debug.5" name="BuildTargetOnDebug" value="&lt;None&gt;"/>
+  <property category="debug.6" name="BuildTargetOnDebug" value="&lt;None&gt;"/>
+  <property category="generalFormatting" name="blockIndent" value="4"/>
+  <property category="generalFormatting" name="tabSize" value="4"/>
+  <property category="idl" name="ProcessIDL" value="false"/>
+  <property category="javaFormatting" name="catchOnNewLine" value="0"/>
+  <property category="javaFormatting" name="closingBraceOwnLine" value="0"/>
+  <property category="javaFormatting" name="elseOnNewLine" value="0"/>
+  <property category="javaFormatting" name="extendsOnNewLine" value="0"/>
+  <property category="javaFormatting" name="finallyOnNewLine" value="0"/>
+  <property category="javaFormatting" name="implementsOnNewLine" value="0"/>
+  <property category="javaFormatting" name="packageThreshold" value="0"/>
+  <property category="javaFormatting" name="spaceAfterTypecast" value="0"/>
+  <property category="javaFormatting" name="spaceBeforeLparen" value="0"/>
+  <property category="javaFormatting" name="wrapAtColumn" value="180"/>
+  <property category="javadoc" name="custom.tags.1" value="todo;a;To Do:"/>
+  <property category="personality" name="personality" value="com.borland.jbuilder.personality.J2EEPersonality com.borland.jbuilder.personality.EJBPersonality com.borland.jbuilder.personality.WebAppPersonality com.borland.jbuilder.webservices.personality.WebServicesPersonality com.borland.jbuilder.personality.DatabasePersonality com.borland.jbuilder.personality.CorbaPersonality com.borland.jbuilder.personality.XMLPersonality com.borland.jbuilder.personality.UnitTestPersonality com.borland.jbuilder.personality.JBuilderUMLPersonality com.borland.jbuilder.personality.VisualDesignerPersonality com.borland.primetime.personality.TeamdevPersonality "/>
+  <property category="runtime" name="ConfigurationCount" value="8"/>
+  <property category="runtime" name="DefaultConfiguration" value="8"/>
+  <property category="runtime.0" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.0" name="ConfigurationName" value="classpath samples/j2meclasses //"/>
+  <property category="runtime.0" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.0" name="application.class" value="com.sun.squawk.io.j2me.classpath.Protocol"/>
+  <property category="runtime.0" name="application.parameters" value="samples\j2meclasses //"/>
+  <property category="runtime.0" name="application.vmparameters" value="-Xbootclasspath/a:j2se/classes;j2me/j2meclasses"/>
+  <property category="runtime.0" name="appserver.parameters" value=""/>
+  <property category="runtime.0" name="appserver.servername" value=""/>
+  <property category="runtime.0" name="appserver.vmparameters" value=""/>
+  <property category="runtime.0" name="server.arguments" value=""/>
+  <property category="runtime.0" name="server.disableServerClassTracing" value="0"/>
+  <property category="runtime.0" name="server.instance.name" value=""/>
+  <property category="runtime.0" name="server.name" value="Tomcat 3.3"/>
+  <property category="runtime.0" name="server.vmparameters" value=""/>
+  <property category="runtime.0" name="test.harness" value="junit.textui.TestRunner"/>
+  <property category="runtime.1" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.1" name="ConfigurationName" value="classpathtest"/>
+  <property category="runtime.1" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.1" name="application.class" value="com.sun.squawk.io.j2me.classpath.Protocol"/>
+  <property category="runtime.1" name="application.parameters" value="tck/tck.jar javasoft/sqe//"/>
+  <property category="runtime.1" name="application.vmparameters" value="-Xbootclasspath/a:j2se/classes;j2me/classes"/>
+  <property category="runtime.1" name="appserver.parameters" value=""/>
+  <property category="runtime.1" name="appserver.servername" value=""/>
+  <property category="runtime.1" name="appserver.vmparameters" value=""/>
+  <property category="runtime.1" name="server.arguments" value=""/>
+  <property category="runtime.1" name="server.disableServerClassTracing" value="0"/>
+  <property category="runtime.1" name="server.instance.name" value=""/>
+  <property category="runtime.1" name="server.name" value="Tomcat 3.3"/>
+  <property category="runtime.1" name="server.vmparameters" value=""/>
+  <property category="runtime.1" name="test.harness" value="com.borland.jbuilder.unittest.JBTestRunner"/>
+  <property category="runtime.2" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.2" name="ConfigurationName" value="load suite0.bin"/>
+  <property category="runtime.2" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.2" name="application.class" value="com.sun.squawk.loader.SuiteLoader"/>
+  <property category="runtime.2" name="application.parameters" value="-format bin suite0.bin"/>
+  <property category="runtime.2" name="application.vmparameters" value="-Xbootclasspath/a:j2se\classes;j2me\classes"/>
+  <property category="runtime.2" name="appserver.parameters" value=""/>
+  <property category="runtime.2" name="appserver.servername" value=""/>
+  <property category="runtime.2" name="appserver.vmparameters" value=""/>
+  <property category="runtime.2" name="server.arguments" value=""/>
+  <property category="runtime.2" name="server.disableServerClassTracing" value="0"/>
+  <property category="runtime.2" name="server.instance.name" value=""/>
+  <property category="runtime.2" name="server.name" value="Tomcat 3.3"/>
+  <property category="runtime.2" name="server.vmparameters" value=""/>
+  <property category="runtime.2" name="test.harness" value="com.borland.jbuilder.unittest.JBTestRunner"/>
+  <property category="runtime.3" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.3" name="ConfigurationName" value="load jcf.in"/>
+  <property category="runtime.3" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.3" name="application.class" value="com.sun.squawk.loader.SuiteLoader"/>
+  <property category="runtime.3" name="application.parameters" value="-o jcf.eeprom jcf.in"/>
+  <property category="runtime.3" name="application.vmparameters" value="-Xbootclasspath/a:j2se\classes;j2me\classes"/>
+  <property category="runtime.3" name="appserver.parameters" value=""/>
+  <property category="runtime.3" name="appserver.servername" value=""/>
+  <property category="runtime.3" name="appserver.vmparameters" value=""/>
+  <property category="runtime.3" name="server.arguments" value=""/>
+  <property category="runtime.3" name="server.disableServerClassTracing" value="0"/>
+  <property category="runtime.3" name="server.instance.name" value=""/>
+  <property category="runtime.3" name="server.name" value="Tomcat 3.3"/>
+  <property category="runtime.3" name="server.vmparameters" value=""/>
+  <property category="runtime.3" name="test.harness" value="com.borland.jbuilder.unittest.JBTestRunner"/>
+  <property category="runtime.4" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.4" name="ConfigurationName" value="load jcf.bin"/>
+  <property category="runtime.4" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.4" name="application.class" value="com.sun.squawk.loader.SuiteLoader"/>
+  <property category="runtime.4" name="application.parameters" value=" -format bin -o jcf.eeprom jcf.bin"/>
+  <property category="runtime.4" name="application.vmparameters" value="-Xbootclasspath/a:j2se\classes;j2me\classes"/>
+  <property category="runtime.4" name="appserver.parameters" value=""/>
+  <property category="runtime.4" name="appserver.servername" value=""/>
+  <property category="runtime.4" name="appserver.vmparameters" value=""/>
+  <property category="runtime.4" name="server.arguments" value=""/>
+  <property category="runtime.4" name="server.disableServerClassTracing" value="0"/>
+  <property category="runtime.4" name="server.instance.name" value=""/>
+  <property category="runtime.4" name="server.name" value="Tomcat 3.3"/>
+  <property category="runtime.4" name="server.vmparameters" value=""/>
+  <property category="runtime.4" name="test.harness" value="com.borland.jbuilder.unittest.JBTestRunner"/>
+  <property category="runtime.5" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.5" name="ConfigurationName" value="load j2me.xml"/>
+  <property category="runtime.5" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.5" name="application.class" value="com.sun.squawk.loader.SuiteLoader"/>
+  <property category="runtime.5" name="application.parameters" value="-o j2me.eeprom j2me.xml"/>
+  <property category="runtime.5" name="application.vmparameters" value="-Xbootclasspath/a:j2se\classes;j2me\classes"/>
+  <property category="runtime.5" name="appserver.parameters" value=""/>
+  <property category="runtime.5" name="appserver.servername" value=""/>
+  <property category="runtime.5" name="appserver.vmparameters" value=""/>
+  <property category="runtime.5" name="server.arguments" value=""/>
+  <property category="runtime.5" name="server.disableServerClassTracing" value="0"/>
+  <property category="runtime.5" name="server.instance.name" value=""/>
+  <property category="runtime.5" name="server.name" value="Tomcat 3.3"/>
+  <property category="runtime.5" name="server.vmparameters" value=""/>
+  <property category="runtime.5" name="test.harness" value="com.borland.jbuilder.unittest.JBTestRunner"/>
+  <property category="runtime.6" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.6" name="ConfigurationName" value="load j2me.bin"/>
+  <property category="runtime.6" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.6" name="application.class" value="com.sun.squawk.loader.SuiteLoader"/>
+  <property category="runtime.6" name="application.parameters" value="-o j2me.eeprom -format bin j2me.bin"/>
+  <property category="runtime.6" name="application.vmparameters" value="-Xbootclasspath/a:j2se\classes;j2me\classes"/>
+  <property category="runtime.6" name="appserver.parameters" value=""/>
+  <property category="runtime.6" name="appserver.servername" value=""/>
+  <property category="runtime.6" name="appserver.vmparameters" value=""/>
+  <property category="runtime.6" name="server.arguments" value=""/>
+  <property category="runtime.6" name="server.disableServerClassTracing" value="0"/>
+  <property category="runtime.6" name="server.instance.name" value=""/>
+  <property category="runtime.6" name="server.name" value="Tomcat 3.3"/>
+  <property category="runtime.6" name="server.vmparameters" value=""/>
+  <property category="runtime.6" name="test.harness" value="com.borland.jbuilder.unittest.JBTestRunner"/>
+  <property category="runtime.7" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.7" name="ConfigurationName" value="BitSet test"/>
+  <property category="runtime.7" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.7" name="application.class" value="com.sun.squawk.util.BitSet"/>
+  <property category="runtime.8" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.8" name="ConfigurationName" value="Lisp2Collector"/>
+  <property category="runtime.8" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.8" name="application.class" value="java.lang.Lisp2Collector"/>
+  <property category="runtime.8" name="application.parameters" value="1M 2M 1024"/>
+  <property category="runtime.8" name="application.vmparameters" value="-Xbootclasspath/a:romizer/classes:j2me/j2meclasses"/>
+  <property category="serverservices" name="disabled.services" value="connector;jdatastore"/>
+  <property category="sys" name="AuthorLabel" value="@author"/>
+  <property category="sys" name="BackupPath" value="bak"/>
+  <property category="sys" name="BeansInstantiate" value="false"/>
+  <property category="sys" name="BraceStyle" value="0"/>
+  <property category="sys" name="CheckStable" value="1"/>
+  <property category="sys" name="Company" value=""/>
+  <property category="sys" name="CompanyLabel" value="Company:"/>
+  <property category="sys" name="CompileOnDebug" value="0"/>
+  <property category="sys" name="CompileOnRun" value="0"/>
+  <property category="sys" name="Copyright" value="Copyright (c) 2002"/>
+  <property category="sys" name="CopyrightLabel" value="Copyright:"/>
+  <property category="sys" name="DefaultPath" value="../../j2me/src"/>
+  <property category="sys" name="Description" value=""/>
+  <property category="sys" name="DescriptionLabel" value="Description:"/>
+  <property category="sys" name="DocPath" value="doc"/>
+  <property category="sys" name="EventMatch" value="false"/>
+  <property category="sys" name="EventStyle" value="1"/>
+  <property category="sys" name="ExcludeClassEnabled" value="0"/>
+  <property category="sys" name="GenerateSourceToOutDir" value="0"/>
+  <property category="sys" name="IncludeTestPath" value="1"/>
+  <property category="sys" name="InstanceVisibility" value="0"/>
+  <property category="sys" name="JDK" value="java version 1.4.2_01-b06"/>
+  <property category="sys" name="JvmVersion" value="1.3"/>
+  <property category="sys" name="LastTag" value="0"/>
+  <property category="sys" name="Libraries" value=""/>
+  <property category="sys" name="MakeStable" value="0"/>
+  <property category="sys" name="OutPath" value="../../j2me/classes"/>
+  <property category="sys" name="SourcePath" value="../../j2me/src;../../define/src"/>
+  <property category="sys" name="TestPath" value="../../j2me/src"/>
+  <property category="sys" name="Title" value=""/>
+  <property category="sys" name="TitleLabel" value="Title:"/>
+  <property category="sys" name="Version" value="1.0"/>
+  <property category="sys" name="VersionLabel" value="@version"/>
+  <property category="sys" name="WorkingDirectory" value="../../"/>
+  <property category="sys" name="max.package.levels" value="6"/>
+  <node name="api" type="NavigationDirectory">
+    <property category="directorynode" name="pattern" value="*.java"/>
+    <property category="directorynode" name="showSubdirectories" value="1"/>
+    <property category="directorynode" name="url" value="C%%|/work/Squawk3G/j2me/src"/>
+    <property category="directorynode" name="usePatternFilter" value="1"/>
+  </node>
+  <node name="Standard Doclet" type="Javadoc">
+    <property category="docletJavadoc" name="additionalOptions" value="-breakiterator"/>
+    <property category="docletJavadoc" name="author" value="1"/>
+    <property category="docletJavadoc" name="splitIndex" value="1"/>
+    <property category="javadoc" name="documentAllPackages" value="0"/>
+    <property category="javadoc" name="packages.1" value="com.sun.squawk.vm"/>
+    <property category="javadoc" name="packages.10" value="com.sun.squawk.io.j2me.channel"/>
+    <property category="javadoc" name="packages.11" value="com.sun.squawk.io.j2me.http"/>
+    <property category="javadoc" name="packages.12" value="com.sun.squawk.io.j2me.classpath"/>
+    <property category="javadoc" name="packages.13" value="com.sun.cldc.i18n"/>
+    <property category="javadoc" name="packages.14" value="com.sun.cldc.i18n.uclc"/>
+    <property category="javadoc" name="packages.15" value="com.sun.cldc.i18n.j2me"/>
+    <property category="javadoc" name="packages.16" value="com.sun.cldc.util"/>
+    <property category="javadoc" name="packages.17" value="com.sun.cldc.util.j2me"/>
+    <property category="javadoc" name="packages.18" value="com.sun.cldc.io"/>
+    <property category="javadoc" name="packages.19" value="com.sun.cldc.io.connections"/>
+    <property category="javadoc" name="packages.2" value="com.sun.squawk.util"/>
+    <property category="javadoc" name="packages.20" value="java.io"/>
+    <property category="javadoc" name="packages.21" value="java.lang"/>
+    <property category="javadoc" name="packages.22" value="java.util"/>
+    <property category="javadoc" name="packages.23" value="javax.microedition.io"/>
+    <property category="javadoc" name="packages.3" value="com.sun.squawk.os"/>
+    <property category="javadoc" name="packages.4" value="com.sun.squawk.compiler"/>
+    <property category="javadoc" name="packages.5" value="com.sun.squawk.compiler.tests"/>
+    <property category="javadoc" name="packages.6" value="com.sun.squawk.io"/>
+    <property category="javadoc" name="packages.7" value="com.sun.squawk.io.connections"/>
+    <property category="javadoc" name="packages.8" value="com.sun.squawk.io.j2me.resource"/>
+    <property category="javadoc" name="packages.9" value="com.sun.squawk.io.j2me.debug"/>
+    <property category="javadoc" name="scope" value="private"/>
+    <property category="nodeJavadoc" name="buildWithProject" value="0"/>
+    <property category="nodeJavadoc" name="directory" value="doc"/>
+    <property category="nodeJavadoc" name="displayAllOutput" value="1"/>
+    <property category="nodeJavadoc" name="useProjectJDK" value="1"/>
+  </node>
+</project>

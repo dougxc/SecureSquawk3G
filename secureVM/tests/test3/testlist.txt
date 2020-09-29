@@ -1,0 +1,36 @@
+3. MFx tests
+
+   a. [MFx no, untrusted static method access -> fail]
+      accessed class, package: X, P-trusted
+        certificate: MFx no      
+      accessed method: A
+      accessing class, package: Y, P-untrusted
+        certificate: none
+      access type: Y access static method X.A 
+
+	// If P.Y can't subclass object, won't instanciate.
+	// Already tested in test1
+
+
+   b. [MFx yes, untrusted static method access -> succeed]
+      accessed class, package: X, P-trusted
+        certificate: MFx yes
+      accessed method: A      
+      accessing class, package: Y, Q-untrusted
+        certificate: none
+
+   c. [MFx byMethod, untrusted static method access -> succeed]
+      accessed class, package: X, P
+        certificate: MFx byMethod (A)
+      accessed method: A
+      accessing class, package: Y, Q
+        certificate: none
+      access type: Y access static method X.A 
+  
+   d. [MFx byMethod, untrusted static method access -> fail]
+      accessed class, package: X, P
+        certificate: MFx byMethod (A)
+      accessed method: B
+      accessing class, package: Y, Q
+        certificate: none
+      access type: Y access static method X.B 

@@ -1,0 +1,84 @@
+These are some of the coding conventions that should be followed when working on the Squawk code base. If you
+are in doubt about anything (mentioned here or not), don't hesitate to ask those who have been working on the
+code for a while about what they recommend.
+
+1, Surround all nested statement blocks with braces and put 'else if' and 'else' on the same line as the closing and opening braces. Eg:
+
+    if (a == b) {
+        ...
+    } else if (a == c) {
+        ...
+    } else {
+        ...
+    }
+
+   An exception to this is for switch statements where the cases can be laid out in a table-like format for easier readability. Eg:
+
+    switch (code) {
+        case opc_nop:         op_nop();                                   break;
+        case opc_aconst_null: op_constant(LoadConstant.createNull(vm));   break;
+        case opc_iconst_m1:   op_constant(LoadConstant.create(vm, -1));   break;
+        case opc_iconst_0:    op_constant(LoadConstant.create(vm, 0));    break;
+        case opc_iconst_1:    op_constant(LoadConstant.create(vm, 1));    break;
+        case opc_iconst_2:    op_constant(LoadConstant.create(vm, 2));    break;
+        case opc_iconst_3:    op_constant(LoadConstant.create(vm, 3));    break;
+        case opc_iconst_4:    op_constant(LoadConstant.create(vm, 4));    break;
+        ...
+    }
+
+2, The tab size is 4 and only spaces should be used (not tab characters).
+
+3, Try to place a javadoc for every field or method declaration. For a method that overrides a method in a
+   super class or interface, the following comment is usually sufficient:
+
+    /**
+     * {@inheritDoc}
+     */
+
+   This instructs javadoc to simply re-use the super-methods description. Later versions of javadoc will do this
+   anyway but placing this comment explicitly means that code will have a consistent look (i.e. all declarations
+   have a comment). Try to use the @link tag inside a description where it helps to refer to some other declaration.
+   E.g:
+
+    /**
+     * Sets the offset of this field or method. This method is package-private
+     * as it should only be called from {@link Klass}.
+     *
+     * @param offset  the offset of this field or method
+     * @see   Member#getOffset()
+     */
+    final void setOffset(int offset) {
+        ...
+    }
+
+   In general, try to follow the guidelines described at http://java.sun.com/j2se/javadoc/writingdoccomments. However,
+   also be aware of the style already used for the majority of the Squawk code. For example, put an empty line
+   between the description and the block tags (e.g. @param, @return, @throws ...) and try to line up the comments for
+   each parameter. E.g:
+
+    /**
+     * Writes a heap trace line for a segment of the memory.
+     *
+     * @param label   a descriptor for the segment or null if the segment denotes space never used
+     * @param start   the starting address of the segment
+     * @param end     the address one byte past the end of the segment
+     */
+    void traceHeapSegment(String label, Address start, Address end) {
+        ...
+    }
+
+   Lastly, do not try to force each line (code or javadoc comment) to be no longer than 80 columns. The days of teletype
+   consoles are long gone! Try to put a statement on its own line and only wrap it it is *very* long (say greater than
+   180 characters).
+
+4, Use spaces (except maybe for arithmetic expressions). Eg:
+
+    if (a <= b || c + d + e) {
+        ...
+    }
+
+  as opposed to:
+
+    if(a<=b || c+d+e){
+        ...
+    }

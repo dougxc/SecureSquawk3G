@@ -1,0 +1,103 @@
+Frames smaller than a nominal size
+
+        push    ebp
+        mov     ebp, esp
+        push    eax / push #n
+
+        cmp     esp, word ptr [sl]
+        ja      ok
+        call    small_frame_overflow
+ok:
+        sub     esp, #size
+
+
+
+Frames larger than a nominal size
+
+        push    ebp
+        mov     ebp, esp
+        push    eax / push #n
+
+        mov     eax, esp
+        sub     eax, #size-nominal
+        cmp     eax, word ptr [sl]
+        ja      ok
+        call    large_frame_overflow
+ok:
+        sub     esp, #size
+
+
+        |               |
+        |               |
+        |               | <- esp
+        |               |
+        |               |
+        |               |
+        |               |
+        |               |
+sl ->    ---------------
+        |               |
+        |               |
+        |    Nominal    |
+        |               |
+        |               |
+        |               |
+        |     Size      |
+        |               |
+        |               |
+         ---------------
+        |     Leaf      |
+        |     Space     |
+ss ->    ---------------
+
+
+
+
+        c.begin();
+        Local temp = c.local(c.tosType());
+        c.store(temp);
+        c.load(temp);
+        c.load(temp);
+        c.end();
+
+
+
+    /**
+     * Set write barrier bit for the store of a reference to an array.
+     *
+     * @param array the array
+     * @param index the array index
+     * @param value the value to be stored into the array
+     */
+    static void do_arrayOopStore(Object array, int index, Object value) {
+        /*
+         * Do null pointer check.
+         */
+        if (array == null) {
+            do_nullPointerException();
+        }
+
+        /*
+         * Get the class of the array.
+         */
+        Klass arrayKlass = GC.getKlass(array);
+        VM.assume(arrayKlass.isArray());
+
+        /*
+         * Do array bounds check.
+         */
+        if (index >= GC.getArrayLength(array)) {
+            do_arrayIndexOutOfBoundsException();
+        }
+
+        /*
+         * Klass.isInstance() will not work before class Klass is initialized. Use the
+         * syncronizationEnabled flag to show that the system is ready for this.
+         */
+        Klass componentType = arrayKlass.getComponentType();
+        if (syncronizationEnabled == false || componentType.isInstance(value)) {
+            Address.setObject(array, index, value);
+        } else {
+            throw new ArrayStoreException();
+        }
+    }

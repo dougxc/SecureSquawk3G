@@ -1,0 +1,22 @@
+/* Test Five - A */
+
+String testClass			= "P.X";
+String expectedError		= "";
+
+/* Allow X to instanciate */
+String[] req 	  	= { "grantee=P.X,grantor=java.lang.Object," +
+								"type=subclass,key=cldc_subclass,passwd=123456",
+								
+/* Allow X to use System.out */
+   						"grantee=P.X,grantor=java.lang.System," +
+								"type=cra,key=cldc_cra,passwd=123456",
+
+/* Allow Y to subclass java.lang.Exception */
+   		 				"grantee=P.TestException,grantor=java.lang.Exception," +
+								"type=subclass,key=cldc_subclass,passwd=123456"
+						};
+																
+String description			= "Class P.X and P.TestException are in the same " +
+                              "domain and thus if P.X tries to catch and throw " +
+                              "an exception of type P.TestException, the operation " +
+                              "should succeed";

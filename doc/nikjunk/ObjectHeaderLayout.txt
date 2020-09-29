@@ -1,0 +1,264 @@
+Instance Objects
+================
+
+The class pointer occupied the lest significant n bits of the
+header word. This is either a machine address or the offset from
+the start of the heap. The lest significant 2 bits are always zero.
+
+
+         -------------------------------
+        |   0   |  Class pointer     00 |
+         -------------------------------
+oop ->  |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+         -------------------------------
+
+
+Small arrays
+============
+
+The most significant n bits are the length of the array in elements.
+The value 2^n-1 is reserved to indicate a large array header.
+
+Small array headers are a space saving option. The system
+can be configured to only use the large array header format
+which will speed up runtime decoding of the class pointer.
+
+         -------------------------------
+        |  Lth  |  Class pointer     00 |
+         -------------------------------
+oop ->  |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+         -------------------------------
+
+
+Large arrays
+============
+
+Large arrays have an extra word. The lest significant 2 bits
+are always "01". The rest of the word is the length in
+elements of the array. The previous word has the reserved
+value 2^n-1 (when n < 0).
+
+         -------------------------------
+        |            Lth             01 |
+         -------------------------------
+        | 2^n-1 |  Class pointer     00 |
+         -------------------------------
+oop ->  |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+         -------------------------------
+
+
+Klasses
+=======
+
+Klasses are identified by virtue of their class pointer pointing
+to the class java.lang.Klass.
+
+The first word of the object header is a 30 bit length with "11"
+set in the low bits. The space between this and the standard
+header word is taken up with the oopmap for the klass.
+The oopmap is read backwards byte-by-byte from the address
+oop - 5 until it is complete. Each byte has the following format:
+
+   (MSB)        (LSB)
+        X6543210
+
+Where 0-6 are bits representing words 0-6 of the instance, and X
+is a bit that when set to 1 indicates that another oopmap bytes
+follows. Each subsiquent byte maps an additional 7 words. The
+last byte in the oopmap will have X set to 0, and any unused
+bits will be ignored by the garbage collector.
+
+         -------------------------------
+        |       Header length        11 |
+         -------------------------------
+        |                               |
+        /             OOPMAP            /
+        |                               |
+         -------------------------------
+        |   0   |  Class pointer     00 |
+         -------------------------------
+oop ->  |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+         -------------------------------
+
+
+
+
+
+Small Methods
+=============
+
+The area between the header length word and the owning class pointer
+are an array of bytes that are read backwards from the byte at oop-12.
+
+The Minfo fields is described below.
+
+The oopmap has the same format as in the Klass. The format of the
+exception and relocation tables has not yet been decided.
+
+         -------------------------------
+        |       Header length        11 |
+         -------------------------------
+        |                               |
+        /       Relocation table        /
+        |                               |
+         -------------------------------
+        |                               |
+        /        Exception table        /
+        |                               |
+         -------------------------------
+        |                               |
+        /             OOPMAP            /
+        |                               |
+         ---------------                |
+        |      Minfo    |               |
+         -------------------------------
+        |  Owning class pointer (cp) 00 |
+         -------------------------------
+        |  Lth  |  Class pointer     00 |
+         -------------------------------
+oop ->  |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+         -------------------------------
+
+
+The Minfo field is either two bytes:
+
+ ----------------
+|  High  |  Low  |
+ ----------------
+
+that when put together make a 16 bit number in the format
+
+   (MSB)                 (LSB)
+        0ppppplllllsssss
+
+Where
+        sssss = the number of stack words
+
+Or is several bytes:
+
+ -------------------------------
+|  Fmt  | byte1 |  ...  | byteN |
+ -------------------------------
+
+Where Fmt is
+
+   (MSB)         (LSB)
+        100000ER
+
+The E bit indicates that an exception table length is specified and the R bit
+indicates that a relocation table length is specified.
+
+This byte is follwed (going backwards) with length specifiers for
+
+   1, The stack size in words.
+   2, The number of local variable words.
+   3, The number of parameter words.
+   4, The size of the exception table in bytes (If the E bit was set).
+   5, The size of the relocation table in bytes (If the R bit was set).
+
+Each of the above length specifiers can are of one of two formats:
+
+A single byte size:
+
+   (MSB)         (LSB)
+        0nnnnnnnn
+
+Or a double byte size starting with the high 7 bits:
+
+   (MSB)         (LSB)
+        1nnnnnnnn
+
+Followed with the low 8 bits:
+
+   (MSB)         (LSB)
+        nnnnnnnnn
+
+
+
+Large Methods
+=============
+
+This is the same as the small header except that is has the extra array length
+word.
+
+
+         -------------------------------
+        |       Header length        11 |
+         -------------------------------
+        |                               |
+        /       Relocation table        /
+        |                               |
+         -------------------------------
+        |                               |
+        /        Exception table        /
+        |                               |
+         -------------------------------
+        |                               |
+        /             OOPMAP            /
+        |                               |
+         ---------------                |
+        |      Minfo    |               |
+         -------------------------------
+        |  Owning class pointer (cp) 00 |
+         -------------------------------
+        |            Lth             01 |
+         -------------------------------
+        | 2^n-1 |  Class pointer     00 |
+         -------------------------------
+oop ->  |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+        |                               |
+         -------------------------------
+

@@ -1,0 +1,15 @@
+/* Test One - C */
+
+String testClass			= "Q.Y";
+String expectedError		= "";
+String[] req 	  	        = {"grantee=P.X,grantor=java.lang.Object," +
+							    "type=subclass,key=cldc_subclass,passwd=123456",
+								
+                                "grantee=Q.Y,grantor=P.X,type=subclass," + 
+								    "key=x.subclass,passwd=123456"
+                             };
+
+
+String description			= "Class P.X holds permit to subclass java.lang.object, while " +
+								"Q.Y holds permit to subclass P.X.  Should Q.Y attempt to " +
+								"subclass P.X, no error should result.";

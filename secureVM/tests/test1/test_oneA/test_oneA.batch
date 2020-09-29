@@ -1,0 +1,14 @@
+
+# Stand alone class 'P.X'
+class P.X {
+  subclass_key="test_onea.subclass"
+  class_resource_access_key="test_onea.cra"
+  primary_domain_key="test_onea.domain"
+  default_field_accessibility="false"
+  default_method_accessibility="false"
+  
+  subclass_permits="java.lang.Object" 
+}
+
+
+

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--JBuilder XML Project-->
+<project>
+  <property category="generalFormatting" name="blockIndent" value="4"/>
+  <property category="generalFormatting" name="tabSize" value="4"/>
+  <property category="idl" name="ProcessIDL" value="false"/>
+  <property category="javaFormatting" name="catchOnNewLine" value="0"/>
+  <property category="javaFormatting" name="closingBraceOwnLine" value="0"/>
+  <property category="javaFormatting" name="elseOnNewLine" value="0"/>
+  <property category="javaFormatting" name="extendsOnNewLine" value="0"/>
+  <property category="javaFormatting" name="finallyOnNewLine" value="0"/>
+  <property category="javaFormatting" name="implementsOnNewLine" value="0"/>
+  <property category="javaFormatting" name="preserveLineBreaks" value="0"/>
+  <property category="javaFormatting" name="spaceAfterTypecast" value="0"/>
+  <property category="javaFormatting" name="spaceBeforeLparen" value="0"/>
+  <property category="javaFormatting" name="wrapAtColumn" value="120"/>
+  <property category="runtime" name="ConfigurationCount" value="1"/>
+  <property category="runtime.0" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.0" name="ConfigurationName" value="traceviewer"/>
+  <property category="runtime.0" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.0" name="application.class" value="com.sun.squawk.traceviewer.TraceViewer"/>
+  <property category="runtime.0" name="application.parameters" value="-sourcepath j2me/src:translator/src:graphics/src:samples/src trace"/>
+  <property category="runtime.0" name="application.vmparameters" value="-Xmx256M"/>
+  <property category="runtime.1" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.1" name="ConfigurationName" value="listclass"/>
+  <property category="runtime.1" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.1" name="application.class" value="com.sun.squawk.listclass.Main"/>
+  <property category="runtime.1" name="application.parameters" value="-jasmin -cp j2me/j2meclasses:jasmin/j2meclasses  java.lang.Test  java.lang.JasminTest"/>
+  <property category="serverservices" name="disabled.services" value="connector;jdatastore"/>
+  <property category="sys" name="AuthorLabel" value="@author"/>
+  <property category="sys" name="BackupPath" value="bak"/>
+  <property category="sys" name="CheckStable" value="1"/>
+  <property category="sys" name="Company" value="Sun Microsystems, Inc. All Rights Reserved."/>
+  <property category="sys" name="CompanyLabel" value="Company:"/>
+  <property category="sys" name="CompileOnDebug" value="0"/>
+  <property category="sys" name="CompileOnRun" value="0"/>
+  <property category="sys" name="Copyright" value="Copyright (c) 2002"/>
+  <property category="sys" name="CopyrightLabel" value="Copyright:"/>
+  <property category="sys" name="DefaultPath" value="../../j2se/src"/>
+  <property category="sys" name="Description" value=""/>
+  <property category="sys" name="DescriptionLabel" value="Description:"/>
+  <property category="sys" name="DocPath" value="../../../SquawkNG/jbuilder/doug/doc"/>
+  <property category="sys" name="ExcludeClassEnabled" value="0"/>
+  <property category="sys" name="IncludeTestPath" value="1"/>
+  <property category="sys" name="JDK" value="java version 1.4.2_01-b06"/>
+  <property category="sys" name="LastTag" value="0"/>
+  <property category="sys" name="Libraries" value="j2sdk1.4.1 Runtime Library;brazil;j2me.jpx;bcel-5.1"/>
+  <property category="sys" name="MakeStable" value="0"/>
+  <property category="sys" name="OutPath" value="../../j2se/classes"/>
+  <property category="sys" name="SourcePath" value="../../j2se/src"/>
+  <property category="sys" name="SourceVersion" value="1.4"/>
+  <property category="sys" name="TestPath" value="../../j2se/src"/>
+  <property category="sys" name="Title" value=""/>
+  <property category="sys" name="TitleLabel" value=""/>
+  <property category="sys" name="Version" value="1.0"/>
+  <property category="sys" name="VersionLabel" value="@version"/>
+  <property category="sys" name="WorkingDirectory" value="../../"/>
+  <property category="sys" name="max.package.levels" value="5"/>
+  <node name="lang" type="NavigationDirectory">
+    <property category="directorynode" name="pattern" value="*Error.java"/>
+    <property category="directorynode" name="url" value="[C%%|/j2sdk1.4.2/src.zip]/java/lang"/>
+    <property category="directorynode" name="usePatternFilter" value="1"/>
+  </node>
+  <node name="org.apache.bcel" type="Package"/>
+</project>

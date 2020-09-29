@@ -1,0 +1,100 @@
+/**
+ * This script file includes methods to check test output and enumerate
+ * test results.
+ *
+ * @author Andrew Crouch
+ * @see http://www.beanshell.org
+ */
+
+/* Test Counters */
+static int totalPassed 	= 0;
+static int totalFailed 	= 0;
+static int totalSkipped = 0;
+
+/**
+ * addTestFailed
+ * Increments the failed test count and prints out message.
+ */
+static void addTestFailed(String testName)
+{
+        totalFailed++;
+        System.out.println(testName + "\t... FAILED");
+        System.out.println("\t\t" + description);
+}
+
+/**
+ * addTestSkipped
+ * Increments the failed test count and prints out message.
+ */
+static void addTestSkipped(String testName)
+{
+        totalSkipped++;
+        System.out.println(testName + "\t... SKIPPED");
+}
+
+/**
+ * addTestPassed
+ * Increments the passed test count and prints out message.
+ */
+static void addTestPassed(String testName)
+{
+        totalPassed++;
+        System.out.println(testName + "\t... PASSED");
+}
+
+
+
+/* Very basic test harness. Check if the expected
+        error was part of standard error message */
+static void checkResult(String expError, String testResult, String testName)
+{
+        /* Check all failure conditions */
+        if(expError == null || testResult == null)
+        {
+                addTestFailed(testName);
+                return;
+        }
+
+        if(expError.equals("") && testResult.length() > 0)
+        {
+                  /**
+                   * If the VM exited normally, the test passed
+                   */
+                if(testResult.indexOf("** VM stopped: exit code = 0 **") > 0)
+                {
+                    addTestPassed(testName);
+                    return;
+                }
+
+                /**
+                 * It did not return okay.
+                 */
+                addTestFailed(testName);
+                return;
+        }
+
+        if(testResult.indexOf(expectedError) < 0)
+        {
+                addTestFailed(testName);
+                return;
+        }
+
+        /* It must have passed */
+        addTestPassed(testName);
+
+}
+
+
+static void printTestResult()
+{
+    int totalTests = totalPassed + totalFailed + totalSkipped;
+    /* Print out test summary */
+    print("");
+    print("Total Tests: " + totalTests);
+    print("Passed " + totalPassed + " (" +
+                              ((double)totalPassed/totalTests)*100 + "%)");
+    print("Failed " + totalFailed + " (" +
+                              ((double)totalFailed/totalTests)*100 + "%)");
+    print("Skipped " + totalSkipped + " (" +
+                              ((double)totalSkipped/totalTests)*100 + "%)");
+}

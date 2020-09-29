@@ -1,0 +1,501 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 39;
+	objects = {
+		014CEA520018CE5811CA2923 = {
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DEBUGGING_SYMBOLS = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_CPP_EXCEPTIONS = NO;
+				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				OPTIMIZATION_CFLAGS = "-O0";
+				PREBINDING = NO;
+				ZERO_LINK = YES;
+			};
+			isa = PBXBuildStyle;
+			name = Development;
+		};
+		014CEA530018CE5811CA2923 = {
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				ZERO_LINK = NO;
+			};
+			isa = PBXBuildStyle;
+			name = Deployment;
+		};
+//010
+//011
+//012
+//013
+//014
+//080
+//081
+//082
+//083
+//084
+		08FB7793FE84155DC02AAC07 = {
+			buildSettings = {
+			};
+			buildStyles = (
+				014CEA520018CE5811CA2923,
+				014CEA530018CE5811CA2923,
+			);
+			hasScannedForEncodings = 1;
+			isa = PBXProject;
+			mainGroup = 08FB7794FE84155DC02AAC07;
+			projectDirPath = "";
+			targets = (
+				8DD76FA90486AB0100D96B5E,
+			);
+		};
+		08FB7794FE84155DC02AAC07 = {
+			children = (
+				91B99936069C9C5300629F7A,
+				08FB7795FE84155DC02AAC07,
+				C6A0FF2B0290797F04C91782,
+				1AB674ADFE9D54B511CA2CBB,
+			);
+			isa = PBXGroup;
+			name = squawk;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		08FB7795FE84155DC02AAC07 = {
+			children = (
+				919D34DA0745AE8200F96E4B,
+				91994DF3069290BD00374F5B,
+				91994DF5069290BD00374F5B,
+				91994E9706929B4700374F5B,
+				91994DF8069290BD00374F5B,
+				91190FB906B11120007BF6AC,
+				91994DF9069290BD00374F5B,
+				91994DFA069290BD00374F5B,
+				91AF03920731FF8A00690BEC,
+				91AF03930731FF8A00690BEC,
+				91AF03940731FF8A00690BEC,
+				91AF03950731FF8A00690BEC,
+				91994DF6069290BD00374F5B,
+				911B700206965701003FA85F,
+				91994DFB069290BD00374F5B,
+			);
+			isa = PBXGroup;
+			name = Source;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+//080
+//081
+//082
+//083
+//084
+//1A0
+//1A1
+//1A2
+//1A3
+//1A4
+		1AB674ADFE9D54B511CA2CBB = {
+			children = (
+				8DD76FB20486AB0100D96B5E,
+			);
+			isa = PBXGroup;
+			name = Products;
+			path = "";
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+//1A0
+//1A1
+//1A2
+//1A3
+//1A4
+//8D0
+//8D1
+//8D2
+//8D3
+//8D4
+		8DD76FA90486AB0100D96B5E = {
+			buildPhases = (
+				8DD76FAA0486AB0100D96B5E,
+				8DD76FAB0486AB0100D96B5E,
+				8DD76FAD0486AB0100D96B5E,
+				8DD76FAE0486AB0100D96B5E,
+				8DD76FAF0486AB0100D96B5E,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				DEPLOYMENT_LOCATION = YES;
+				DEPLOYMENT_POSTPROCESSING = NO;
+				FRAMEWORK_SEARCH_PATHS = "";
+				GCC_DEBUGGING_SYMBOLS = full;
+				GCC_ENABLE_TRIGRAPHS = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_CPU = G5;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = "TRACE=1 ASSUME=1";
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = NO;
+				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
+				GCC_WARN_UNKNOWN_PRAGMAS = NO;
+				HEADER_SEARCH_PATHS = "/System/Library/Frameworks/JavaVM.framework/Versions/1.4.2/Headers /Users/doug/work/Squawk3G/slowvm/src/rts/gcc-macosx";
+				INSTALL_PATH = "$(HOME)/work/Squawk3G";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = /System/Library/Frameworks/JavaVM.framework/JavaVM;
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = squawk;
+				REZ_EXECUTABLE = YES;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+			};
+			dependencies = (
+			);
+			isa = PBXNativeTarget;
+			name = squawk;
+			productInstallPath = "$(HOME)/bin";
+			productName = squawk;
+			productReference = 8DD76FB20486AB0100D96B5E;
+			productType = "com.apple.product-type.tool";
+		};
+		8DD76FAA0486AB0100D96B5E = {
+			buildActionMask = 2147483647;
+			files = (
+				91994DFF069290BD00374F5B,
+				91994E04069290BD00374F5B,
+				911B700306965701003FA85F,
+				91AF03960731FF8A00690BEC,
+				91AF03970731FF8A00690BEC,
+			);
+			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8DD76FAB0486AB0100D96B5E = {
+			buildActionMask = 2147483647;
+			files = (
+				91994DFC069290BD00374F5B,
+				91994DFE069290BD00374F5B,
+				91994E01069290BD00374F5B,
+				91994E02069290BD00374F5B,
+				91994E03069290BD00374F5B,
+				91994E9906929B4700374F5B,
+				91190FBA06B11120007BF6AC,
+				91AF03980731FF8A00690BEC,
+				91AF03990731FF8A00690BEC,
+				919D34DB0745AE8200F96E4B,
+			);
+			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8DD76FAD0486AB0100D96B5E = {
+			buildActionMask = 2147483647;
+			files = (
+				91B99937069C9C5300629F7A,
+			);
+			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8DD76FAE0486AB0100D96B5E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8DD76FAF0486AB0100D96B5E = {
+			buildActionMask = 8;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			isa = PBXCopyFilesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		8DD76FB20486AB0100D96B5E = {
+			explicitFileType = "compiled.mach-o.executable";
+			includeInIndex = 0;
+			isa = PBXFileReference;
+			path = squawk;
+			refType = 3;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+//8D0
+//8D1
+//8D2
+//8D3
+//8D4
+//910
+//911
+//912
+//913
+//914
+		91190FB906B11120007BF6AC = {
+			explicitFileType = sourcecode.c.h;
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			name = suite.c;
+			path = slowvm/src/vm/suite.c;
+			refType = 3;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		91190FBA06B11120007BF6AC = {
+			fileRef = 91190FB906B11120007BF6AC;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		911B700206965701003FA85F = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = rom.h;
+			path = /Users/doug/work/Squawk3G/slowvm/src/vm/rom.h;
+			refType = 0;
+			sourceTree = "<absolute>";
+		};
+		911B700306965701003FA85F = {
+			fileRef = 911B700206965701003FA85F;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		91994DF3069290BD00374F5B = {
+			explicitFileType = sourcecode.c.h;
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			name = bytecodes.c;
+			path = /Users/doug/work/Squawk3G/slowvm/src/vm/bytecodes.c;
+			refType = 0;
+			sourceTree = "<absolute>";
+			usesTabs = 0;
+		};
+		91994DF5069290BD00374F5B = {
+			explicitFileType = sourcecode.c.h;
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			name = io.c;
+			path = /Users/doug/work/Squawk3G/slowvm/src/vm/io.c;
+			refType = 0;
+			sourceTree = "<absolute>";
+		};
+		91994DF6069290BD00374F5B = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = platform.h;
+			path = /Users/doug/work/Squawk3G/slowvm/src/vm/platform.h;
+			refType = 0;
+			sourceTree = "<absolute>";
+		};
+		91994DF8069290BD00374F5B = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = squawk.c;
+			path = /Users/doug/work/Squawk3G/slowvm/src/vm/squawk.c;
+			refType = 0;
+			sourceTree = "<absolute>";
+		};
+		91994DF9069290BD00374F5B = {
+			explicitFileType = sourcecode.c.h;
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			name = switch.c;
+			path = /Users/doug/work/Squawk3G/slowvm/src/vm/switch.c;
+			refType = 0;
+			sourceTree = "<absolute>";
+		};
+		91994DFA069290BD00374F5B = {
+			explicitFileType = sourcecode.c.h;
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			name = trace.c;
+			path = /Users/doug/work/Squawk3G/slowvm/src/vm/trace.c;
+			refType = 0;
+			sourceTree = "<absolute>";
+		};
+		91994DFB069290BD00374F5B = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = util.h;
+			path = /Users/doug/work/Squawk3G/slowvm/src/vm/util.h;
+			refType = 0;
+			sourceTree = "<absolute>";
+		};
+		91994DFC069290BD00374F5B = {
+			fileRef = 91994DF3069290BD00374F5B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		91994DFE069290BD00374F5B = {
+			fileRef = 91994DF5069290BD00374F5B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		91994DFF069290BD00374F5B = {
+			fileRef = 91994DF6069290BD00374F5B;
+			isa = PBXBuildFile;
+			settings = {
+				ATTRIBUTES = (
+				);
+			};
+		};
+		91994E01069290BD00374F5B = {
+			fileRef = 91994DF8069290BD00374F5B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		91994E02069290BD00374F5B = {
+			fileRef = 91994DF9069290BD00374F5B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		91994E03069290BD00374F5B = {
+			fileRef = 91994DFA069290BD00374F5B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		91994E04069290BD00374F5B = {
+			fileRef = 91994DFB069290BD00374F5B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		91994E9706929B4700374F5B = {
+			explicitFileType = sourcecode.c.h;
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			name = os.c;
+			path = "/Users/doug/work/Squawk3G/slowvm/src/rts/gcc-macosx/os.c";
+			refType = 0;
+			sourceTree = "<absolute>";
+		};
+		91994E9906929B4700374F5B = {
+			fileRef = 91994E9706929B4700374F5B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		919D34DA0745AE8200F96E4B = {
+			explicitFileType = sourcecode.c.h;
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			name = cio.c;
+			path = slowvm/src/vm/cio.c;
+			refType = 3;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		919D34DB0745AE8200F96E4B = {
+			fileRef = 919D34DA0745AE8200F96E4B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		91AF03920731FF8A00690BEC = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = buildflags.h;
+			path = slowvm/src/vm/buildflags.h;
+			refType = 3;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		91AF03930731FF8A00690BEC = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = globals.h;
+			path = slowvm/src/vm/globals.h;
+			refType = 3;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		91AF03940731FF8A00690BEC = {
+			explicitFileType = sourcecode.c.h;
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			name = ioport.c;
+			path = slowvm/src/vm/ioport.c;
+			refType = 3;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		91AF03950731FF8A00690BEC = {
+			explicitFileType = sourcecode.c.h;
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			name = ioserver.c;
+			path = slowvm/src/vm/ioserver.c;
+			refType = 3;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		91AF03960731FF8A00690BEC = {
+			fileRef = 91AF03920731FF8A00690BEC;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		91AF03970731FF8A00690BEC = {
+			fileRef = 91AF03930731FF8A00690BEC;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		91AF03980731FF8A00690BEC = {
+			fileRef = 91AF03940731FF8A00690BEC;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		91AF03990731FF8A00690BEC = {
+			fileRef = 91AF03950731FF8A00690BEC;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		91B99936069C9C5300629F7A = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = JavaVM.framework;
+			path = /System/Library/Frameworks/JavaVM.framework;
+			refType = 0;
+			sourceTree = "<absolute>";
+		};
+		91B99937069C9C5300629F7A = {
+			fileRef = 91B99936069C9C5300629F7A;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+//910
+//911
+//912
+//913
+//914
+//C60
+//C61
+//C62
+//C63
+//C64
+		C6A0FF2B0290797F04C91782 = {
+			children = (
+			);
+			isa = PBXGroup;
+			name = Documentation;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+	};
+	rootObject = 08FB7793FE84155DC02AAC07;
+}

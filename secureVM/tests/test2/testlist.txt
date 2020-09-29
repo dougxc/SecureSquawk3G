@@ -1,0 +1,46 @@
+2. NFx tests
+
+   a. [NFx false, untrusted instantiation -> fail]
+      accessed class, package: X, P-trusted
+        certificate: NFx false
+      instantiating class, package: Y, P-untrusted
+        certificate: none
+      access type: Y instantiate X
+
+	// If P.Y can't subclass object, won't instanciate.
+	// Already tested in test1
+
+
+   b. [NFx true, untrusted instantiation -> succeed]
+      accessed class, package: X, P-trusted
+        certificate: NFx true
+      instantiating class, package: Y, P-untrusted
+        certificate: none
+      access type: Y instantiate X
+
+   ------------This test confirms the operation of the trusted instantiation 
+               privilege
+   c. [NFx false, trusted instantiation -> succeed]
+      accessed class, package: X, P-trusted
+        certificate: NFx false
+      instantiating class, package: Y, Q-trusted
+        certificate: Y instantiates of X
+      access type: Y instantiate X
+
+   ------------This test confirms the operation of the domain privilege
+   d. [NFx false, trusted instantiation -> succeed]
+      accessed class, package: X, P-trusted
+        certificate: NFx false
+      instantiating class, package: Y, Q-trusted
+        certificate: Y in domain of X
+      access type: Y instantiate X
+
+   ------------This test confirms the operation of the instantiation privilege
+               of the subclassing privilege
+   e. [NFx false, trusted instantiation -> ???]
+      accessed class, package: X, P-trusted
+        certificate: NFx false
+      instantiating class, package: Y (subclass of X), Q-trusted
+        certificate: Y subclass of X
+      access type: Y instantiate X
+

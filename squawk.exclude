@@ -1,0 +1,5 @@
+com.sun.squawk.compiler.*
+com.sun.squawk.os.*
+J2ME.DEBUG=false                           java.lang.BytecodeTracer
+J2ME.COLLECTOR=java.lang.Lisp2Collector    java.lang.CheneyCollector*
+J2ME.COLLECTOR=java.lang.CheneyCollector   java.lang.Lisp2Collector*

@@ -1,0 +1,154 @@
+/**
+ * This is a beanscript shell script to run a
+ * particular test within the SKVM test suite.
+ *
+ * The script should be invoked by the global script
+ * runTests.bsh in the /tests directory.
+ *
+ * @author Andrew Crouch
+ * @see http://www.beanshell.org
+ */
+
+
+/* Test Directories */
+File classesDirFile 		= new File(testDirFile, "classes");
+File preverifiedDirFile 	= new File(testDirFile, "preverified");
+File wobulatedDirFile 		= new File(testDirFile, "wobulated");
+
+File skipTestFile 		= new File(testDirFile, "skiptest");
+
+/* String representations of fully qualified path */
+String testDir				= testDirFile.getCanonicalPath();
+String classesDir 			= classesDirFile.getCanonicalPath();
+String preverifiedDir		= preverifiedDirFile.getCanonicalPath();
+String wobulatedDir			= wobulatedDirFile.getCanonicalPath();
+
+/* Test attributes */
+String testName 			= testDir.substring(testDir.lastIndexOf(FS) + 1);
+
+
+void postWobulate(){;}  /* Overridden in test.bsh */
+
+
+void cleanUp()
+{
+        /* Clean up previous files */
+        delete(classesDirFile);
+        delete(preverifiedDirFile);
+        delete(wobulatedDirFile);
+        delete(new File(testDir + FS + testName + ".pdb"));
+
+    /* Clean up test parameters */
+    String testClass			= null;
+    String expectedError		= null;
+    String[] req                = null;
+    String description          = null;
+}
+
+void addPermission(String[] req)
+{
+    String keyStore;
+
+    /* Add permissions for each requirement */
+    for(int i = 0; i < req.length; i++)
+    {
+        keyStore = CLDC_KEYSTORE;
+
+             /* Work out which keystore we're using */
+            if(req[i].indexOf("key=cldc_") < 0)
+        {
+            keyStore = testDir + FS + testName + ".keystore";
+        }
+
+            /* Grant appropriate permissions */
+        exec2("java -cp " + svmtoolsClasspath + " svmtools.PermitTool " +
+                    " -sign "			+
+                    " -db " 			+ testDir + FS + testName + ".pdb" +
+                    " -keystore " 		+ keyStore +
+                    " -storepass " 		+ DEFAULT_STOREPASS +
+                    " -cp " 			+ preverifiedDir +
+                    " "					+ req[i], DEBUG_LEVEL > 2);
+   }
+}
+
+void wobulateFiles()
+{
+         /* Wobulate deployed class(es) */
+           exec2("java -cp " + svmtoolsClasspath + " svmtools.Wobulator " +
+                " -batch " 		+ testDir + FS + testName + ".batch" +
+                " -db " 		+ testDir + FS + testName + ".pdb" +
+                " -storepass " 	+ DEFAULT_STOREPASS +
+                " -keystore " 	+ testDir + FS + testName + ".keystore" +
+                " -d " 			+ wobulatedDir +
+                " -cp " 		+ preverifiedDir, DEBUG_LEVEL > 2);
+}
+
+    /*---------------------------------------------------------------------------*\
+     *                           Start of test procedure                         *
+    \*---------------------------------------------------------------------------*/
+
+
+/* Still clean up the files, but skip the test */
+if ( skipTestFile.exists() ) {
+    addTestSkipped(testName);
+
+    if(CLEAN_UP) {
+            cleanUp();
+    }
+    return;
+}
+
+
+/* Remove any previous test files */
+cleanUp();
+
+/* Load test specifics */
+source(testScriptFile.getCanonicalPath());
+
+/* Create storage directories */
+classesDirFile.mkdir();
+preverifiedDirFile.mkdir();
+wobulatedDirFile.mkdir();
+
+/* Generate list of java files to compile */
+LinkedList javaFiles = find(new File(testDirFile, "src"), false, JAVA_FILE_REGEX);
+String fileList = "";
+while(javaFiles.size() > 0)
+{
+        File f = (File)javaFiles.removeFirst();
+        fileList += f.toString() + " ";
+}
+
+/* Compile the code */
+exec2("javac -source 1.4 -target 1.4 -d " + classesDir + " -classpath " + CLDC_API +
+                         " " + fileList, DEBUG_LEVEL > 2);
+
+/* Preverify the code */
+exec2(PRE_VERIFIER_LOC + " -d " + preverifiedDir + " -classpath " + CLDC_API +
+                        " " + classesDir, DEBUG_LEVEL > 2);
+
+/* Add permissions */
+addPermission(req);
+
+/* Add permissions to files */
+wobulateFiles();
+
+/* Post Wobulate */
+postWobulate();     /* Specified in test.bsh */
+
+    /*---------------------------------------------------------------------------*\
+     *                           Run test code			                         *
+    \*---------------------------------------------------------------------------*/
+
+String result = "";
+
+/* Run Test Code */
+result = exec2(SQUAWK_EXEC + " -cp:" + wobulatedDir + " " +
+                        SQUAWK_OPTIONS + " " + testClass, DEBUG_LEVEL > 2);
+
+/* Check if the test passed/failed. This will also add to summary. */
+checkResult(expectedError, result, testName);
+
+/* Should we remove temporary directories etc */
+if(CLEAN_UP)
+        cleanUp();

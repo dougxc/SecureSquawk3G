@@ -1,0 +1,12 @@
+entrypoint {
+    void                com.sun.squawk.translator.Translator.<init>()
+    void                com.sun.squawk.translator.Translator.open(java.lang.Suite)
+    java.lang.Klass     com.sun.squawk.translator.Translator.findClass(java.lang.String, int)
+    void                com.sun.squawk.translator.Translator.load(java.lang.Klass)
+    void                com.sun.squawk.translator.Translator.convert(java.lang.Klass)
+    void                com.sun.squawk.translator.Translator.close()
+    boolean             com.sun.squawk.translator.Translator.TCKERRORLOGGER
+
+//    void                com.sun.squawk.translator.util.TCKErrorLogger.initialize(java.io.PrintStream, com.sun.squawk.util.Hashtable, java.lang.String)
+//    void                com.sun.squawk.translator.util.TCKErrorLogger.close()
+}

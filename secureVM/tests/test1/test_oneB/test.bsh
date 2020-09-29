@@ -1,0 +1,21 @@
+/* Test One - B */
+
+String testClass			= "P.Y";
+String expectedError		= "";
+
+/* Allow X to instanciate java.lang.Object */
+String[] req 	  	=   { "grantee=P.X,grantor=java.lang.Object,type=subclass," +
+								"key=cldc_subclass,passwd=123456"
+                        };
+
+String description		= "Class P.X holds permit to subclass java.lang.object with the " +
+							"TACC_SUBCLASS flag set. P.Y holds no security permissions " +
+							"but should be able to subclass P.X without error";
+                                
+void postWobulate()
+{
+    /* Copy non-wobulated file */
+    cp(preverifiedDir + FS + "P" + FS + "Y.class", 
+        wobulatedDir + FS + "P" + FS + "Y.class");
+
+}

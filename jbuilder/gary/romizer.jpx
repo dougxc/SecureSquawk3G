@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--JBuilder XML Project-->
+<project>
+  <property category="generalFormatting" name="blockIndent" value="4"/>
+  <property category="generalFormatting" name="tabSize" value="4"/>
+  <property category="idl" name="ProcessIDL" value="false"/>
+  <property category="javaFormatting" name="packageThreshold" value="0"/>
+  <property category="javadoc" name="custom.tags.1" value="todo;a;To Do:"/>
+  <property category="runtime" name="ConfigurationCount" value="3"/>
+  <property category="runtime" name="DefaultConfiguration" value="3"/>
+  <property category="runtime.0" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.0" name="ConfigurationName" value="romize graphics"/>
+  <property category="runtime.0" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.0" name="application.class" value="java.lang.Romizer"/>
+  <property category="runtime.0" name="application.parameters" value="-cp j2me/j2meclasses:graphics/j2meclasses graphics/j2meclasses"/>
+  <property category="runtime.0" name="application.vmparameters" value=" -Xbootclasspath/a:j2se\classes;romizer\classes;j2me\j2meclasses;translator\j2meclasses"/>
+  <property category="runtime.1" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.1" name="ConfigurationName" value="romize translator"/>
+  <property category="runtime.1" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.1" name="application.class" value="java.lang.Romizer"/>
+  <property category="runtime.1" name="application.parameters" value="-cp j2me/j2meclasses:translator/j2meclasses translator/j2meclasses"/>
+  <property category="runtime.1" name="application.vmparameters" value=" -Xbootclasspath/a:j2se\classes;romizer\classes;j2me\j2meclasses;translator\j2meclasses"/>
+  <property category="runtime.2" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.2" name="ConfigurationName" value="romize j2me"/>
+  <property category="runtime.2" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.2" name="application.class" value="java.lang.Romizer"/>
+  <property category="runtime.2" name="application.parameters" value="-timer -cp j2me/j2meclasses j2me/j2meclasses"/>
+  <property category="runtime.2" name="application.vmparameters" value=" -Xbootclasspath/a:j2se\classes;romizer\classes;j2me\j2meclasses;translator\j2meclasses"/>
+  <property category="runtime.3" name="BuildTargetOnRun" value="&lt;None&gt;"/>
+  <property category="runtime.3" name="ConfigurationName" value="romize positivetck"/>
+  <property category="runtime.3" name="RunnableType" value="com.borland.jbuilder.runtime.ApplicationRunner"/>
+  <property category="runtime.3" name="application.class" value="java.lang.Romizer"/>
+  <property category="runtime.3" name="application.parameters" value="-cp j2me/j2meclasses:tck/tck.jar -tck:java.lang.PositiveTCK10a:1"/>
+  <property category="runtime.3" name="application.vmparameters" value=" -Xbootclasspath/a:j2se\classes;romizer\classes;j2me\j2meclasses;translator\j2meclasses"/>
+  <property category="serverservices" name="disabled.services" value="connector;jdatastore"/>
+  <property category="serverservices" name="single.server.name" value="Tomcat 4.0"/>
+  <property category="sys" name="AuthorLabel" value="@author"/>
+  <property category="sys" name="BackupPath" value="bak"/>
+  <property category="sys" name="CheckStable" value="1"/>
+  <property category="sys" name="Company" value=""/>
+  <property category="sys" name="CompanyLabel" value="Company:"/>
+  <property category="sys" name="Copyright" value="Copyright (c) 2003"/>
+  <property category="sys" name="CopyrightLabel" value="Copyright:"/>
+  <property category="sys" name="DefaultPath" value="../../romizer/src"/>
+  <property category="sys" name="Description" value=""/>
+  <property category="sys" name="DescriptionLabel" value="Description:"/>
+  <property category="sys" name="DocPath" value="doc"/>
+  <property category="sys" name="ExcludeClassEnabled" value="0"/>
+  <property category="sys" name="IncludeTestPath" value="1"/>
+  <property category="sys" name="InstanceVisibility" value="2"/>
+  <property category="sys" name="JDK" value="java version 1.4.2_01-b06"/>
+  <property category="sys" name="JvmVersion" value="1.2"/>
+  <property category="sys" name="LastTag" value="0"/>
+  <property category="sys" name="Libraries" value="j2sdk1.4.1 Runtime Library;define.jpx;j2me.jpx;translator.jpx;j2se.jpx"/>
+  <property category="sys" name="MakeStable" value="0"/>
+  <property category="sys" name="OutPath" value="../../romizer/classes"/>
+  <property category="sys" name="SourcePath" value="../../romizer/src"/>
+  <property category="sys" name="SourceVersion" value="1.4"/>
+  <property category="sys" name="TestPath" value="../../romizer/src"/>
+  <property category="sys" name="Title" value=""/>
+  <property category="sys" name="TitleLabel" value="Title:"/>
+  <property category="sys" name="Version" value="1.0"/>
+  <property category="sys" name="VersionLabel" value="@version"/>
+  <property category="sys" name="WorkingDirectory" value="../../"/>
+  <node name="src" type="NavigationDirectory">
+    <property category="directorynode" name="pattern" value="*.java"/>
+    <property category="directorynode" name="showSubdirectories" value="1"/>
+    <property category="directorynode" name="url" value="C%%|/work/Squawk3G/romizer/src"/>
+    <property category="directorynode" name="usePatternFilter" value="1"/>
+  </node>
+</project>

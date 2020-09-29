@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# This is a convenient launcher for the SVM tools.
+#
+
+# This is the classpath where the svmtool.* classes are found as well as
+# the BCEL library classes. This needs to be set according to where these
+# classes are installed.
+if [ $OS = "Windows_NT" ]; then
+	CLASSPATH="$SVM_HOME/SVMTools/classes;$SVM_HOME/BCEL/classes"
+else
+	CLASSPATH="$SVM_HOME/SVMTools/classes:$SVM_HOME/BCEL/classes"
+fi
+
+TOOLS="Wobulator GenRequests PermitTool"
+if [ $# -eq 0 ]; then
+    echo -e "The tools supported by the svmtool launcher are:\n"
+    for t in $TOOLS; do echo -e "\t$t"; done
+    echo
+    echo -e "To launch a given tool, provide it as the first argument to "
+    echo -e "the launcher. For example:\n"
+    echo -e "\t$prog Wobulator <args for Wobulator>"
+    exit 1
+fi
+
+TOOL=$1
+shift
+
+java -cp "$CLASSPATH" svmtools.${TOOL} $*

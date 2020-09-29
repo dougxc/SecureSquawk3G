@@ -1,0 +1,1 @@
+-nocleanup -inline:0 -lib -driver j2me/bco.driver

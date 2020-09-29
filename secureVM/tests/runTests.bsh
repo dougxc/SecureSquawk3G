@@ -1,0 +1,126 @@
+/**
+ * This is a beanscript shell script to enumerate and run
+ * the SKVM test suite.
+ *
+ * Run this script by typing "java bsh.Interpreter runTests.bsh"
+ * on the command line in the tests directory.
+ *
+ * Requirements:
+ *	- preverify executable must exist on the PATH or be specified
+ *    in the properties file.
+ *  - CLDC_API must be already wobulated
+ *  - Beanshell interpreter must be on the classpath
+ *
+ * @author Andrew Crouch
+ * @see http://www.beanshell.org
+ */
+
+import java.util.Properties;
+
+
+    /*---------------------------------------------------------------------------*\
+     *                           Load Properties File	                         *
+    \*---------------------------------------------------------------------------*/
+
+private static final String propertiesFile = "tests.properties";
+
+/* Load properties file. */
+Properties p = new Properties();
+
+try
+{
+        FileInputStream fis = new FileInputStream(propertiesFile);
+        p.load(fis);
+}
+catch (IOException e)
+{
+        error("Failed to open properties file!");
+        exit();
+}
+
+/* Setup commonly used variables */
+int    		DEBUG_LEVEL 	= Integer.parseInt(p.getProperty("DEBUG_LEVEL")).intValue();
+boolean 	CLEAN_UP		= Boolean.valueOf(p.getProperty("CLEAN_UP")).booleanValue();
+
+/* System properties */
+String FS	 				= System.getProperty("file.separator");
+String PS					= System.getProperty("path.separator");
+
+/* Test Properties */
+String TEST_FILE_NAME		= p.getProperty("TEST_FILE_NAME");
+String TEST_DIRS_REGEX		= p.getProperty("TEST_DIRS_REGEX");
+String JAVA_FILE_REGEX		= p.getProperty("JAVA_FILE_REGEX");
+String ALL_FILE_REGEX		= p.getProperty("ALL_FILE_REGEX");
+String SVM_HOME			= p.getProperty("SVM_HOME");
+String CLDC_API			= p.getProperty("CLDC_API");
+String CLDC_KEYSTORE 		= p.getProperty("CLDC_KEYSTORE");
+String PRE_VERIFIER_LOC		= p.getProperty("PRE_VERIFIER_LOC");
+String DEFAULT_STOREPASS	= p.getProperty("DEFAULT_STOREPASS");
+String SQUAWK_OPTIONS		= p.getProperty("SQUAWK_OPTIONS");
+String SQUAWK_EXEC		= p.getProperty("SQUAWK_EXEC");
+String SQUAWK_DIR		= p.getProperty("SQUAWK_DIR");
+
+/**
+ * Add appropriate parameters to allow squawk to be called via an absolute path
+ */
+SQUAWK_EXEC = SQUAWK_DIR + FS + SQUAWK_EXEC;
+SQUAWK_EXEC += " -Xboot:" + SQUAWK_DIR + FS + "squawk.suite";
+SQUAWK_EXEC += " -J-Djava.class.path=" + SQUAWK_DIR + FS + "squawk.jar";
+
+
+/* Setup svmtools classpath, including required BCEL library */
+String bcelClasspath 		= SVM_HOME + FS + "bcel-5.1" + FS + "classes";
+String svmtoolsClasspath 	= SVM_HOME + FS + "SVMTools" + FS + "classes" +
+                                                                PS + bcelClasspath;
+
+
+    /* Include System functions/resources */
+    source("scripts" + FS + "systemMethods.bsh");
+
+    /* Include Test functions / resources */
+    source("scripts" + FS + "testMethods.bsh");
+    /*---------------------------------------------------------------------------*\
+     *                           Begin Test Procedure                         	 *
+    \*---------------------------------------------------------------------------*/
+
+
+/* Start point is the current directory */
+File start = new File(".");
+
+/* start the search */
+LinkedList testDirs = find(start, true, TEST_DIRS_REGEX);
+
+if(DEBUG_LEVEL > 0)
+        print("Starting tests ");
+
+/* Directory of the test */
+File testDirFile = null;
+File testScriptFile = null;
+
+/* Start each individual test */
+while(testDirs.size() > 0)
+{
+        /* Grab each directory */
+        File f = (File)testDirs.removeFirst();
+
+        if(DEBUG_LEVEL > 1)
+                print(f.getPath());
+
+        /* Build testScript file object */
+        File testScript = new File(f, TEST_FILE_NAME);
+        if(!testScript.exists())
+        {
+                if(DEBUG_LEVEL > 2)
+                        error("No test script found. Skipping");
+                continue;
+        }
+
+    /* Parameters for runTest.bsh */
+    testScriptFile = testScript;
+    testDirFile = f;
+
+        /* Run test */
+        source("scripts" + FS + "runTest.bsh");
+}
+
+printTestResult();

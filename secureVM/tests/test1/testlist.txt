@@ -1,0 +1,52 @@
+ 
+SFx - Indicating if objects can subclass X without privileges.
+NFx - Indicating if objects can can instanciate without privileges.
+
+MFx - Constant if all objects can invoke static FIELDS in X
+	Can specify per FIELD
+
+MFx - Constant if all objects can invoke static METHOD in X
+	Can specify per method
+
+
+1. SFx tests
+
+   a. [SFx false, untrusted access -> fail]
+      accessed class, package: X, P-trusted
+        certificate: SFx false 
+      accessing class, package: Y, P-untrusted
+        certificate: none
+      access type: Y subclass X
+
+   b. [SFx true, untrusted access -> succeed]
+      accessed class, package: X, P-trusted
+        certificate: SFx true
+      accessing class, package: Y, P-untrusted
+        certificate: none
+      access type: Y subclass X
+
+   ------------This test confirms the operation of the subclassing privilege
+   c. [SFx false, trusted access -> succeed]
+      accessed class, package: X, P-trusted
+        certificate: SFx false
+      accessing class, package: Y, Q-trusted
+        certificate: Y subclass of X
+      access type: Y subclass X
+
+   ------------d and e verify the operation of the protected access privilege
+   d. [SFx false, protected field access -> succeed]
+      accessed class, package: X, P-trusted
+        certificate: SFx false
+      accessed field: A (protected)
+      accessing class, package: Y (subclass of X), Q-trusted
+        certificate: Y subclass of X
+      access type: Y access X.A
+
+   ------------This test confirms the operation of the package privilege 
+   e. [SFx false, protected field access -> succeed]
+      accessed class, package: X, P-trusted
+        certificate: SFx false
+      accessed field: A (protected)
+      accessing class, package: Y (not subclass of X), P-trusted
+        certificate: not relevant
+      access type: Y access X.A

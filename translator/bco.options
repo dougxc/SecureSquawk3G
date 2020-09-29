@@ -1,0 +1,1 @@
+-cp j2me/classes -inline:0 -driver translator/bco.driver
